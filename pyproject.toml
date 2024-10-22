@@ -18,6 +18,7 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 dev = ["black", "isort"]
+test = ["coverage", "pytest", "pytest-cov", "pytest-mock"]
 
 [project.scripts]
 blinkstick = "blinkstick:main"
