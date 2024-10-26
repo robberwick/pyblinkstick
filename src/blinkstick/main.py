@@ -74,7 +74,7 @@ class IndentedHelpFormatterWithNL(IndentedHelpFormatter):
 
 
 def print_info(stick):
-    print("Found device:")
+    print("Found backend:")
     print("    Manufacturer:  {0}".format(stick.get_manufacturer()))
     print("    Description:   {0}".format(stick.get_description()))
     print("    Variant:       {0}".format(stick.get_variant_string()))
@@ -108,7 +108,7 @@ def main():
 
     parser.add_option("-s", "--serial",
                       dest="serial",
-                      help="Select device by serial number. If unspecified, action will be performed on all BlinkSticks.")
+                      help="Select backend by serial number. If unspecified, action will be performed on all BlinkSticks.")
 
     parser.add_option("-v", "--verbose",
                       action="store_true", dest="verbose",
@@ -116,7 +116,7 @@ def main():
 
 
     group = OptionGroup(parser, "Change color",
-                    "These options control the color of the device  ")
+                    "These options control the color of the backend  ")
 
     group.add_option("--channel",
                       default=0, dest="channel",
@@ -136,7 +136,7 @@ def main():
 
     group.add_option("--set-color",
                       dest="color",
-                      help="Set the color for the device. This can also be the last argument for the script. "
+                      help="Set the color for the backend. This can also be the last argument for the script. "
                            "The value can either be a named color, hex value, 'random' or 'off'.\n\n"
                            "CSS color names are defined http://www.w3.org/TR/css3-color/ e.g. red, green, blue. "
                            "Specify color using hexadecimal color value e.g. 'FF3366'")
@@ -186,7 +186,7 @@ def main():
     parser.add_option_group(group)
 
     group = OptionGroup(parser, "Device data and behaviour",
-                    "These options will change device mode and data stored internally.  ")
+                    "These options will change backend mode and data stored internally.  ")
 
     group.add_option("--set-mode",
                       default=0, dest="mode",
@@ -194,11 +194,11 @@ def main():
 
     group.add_option("--set-infoblock1",
                       dest="infoblock1",
-                      help="Set the first info block for the device.")
+                      help="Set the first info block for the backend.")
 
     group.add_option("--set-infoblock2",
                       dest="infoblock2",
-                      help="Set the second info block for the device.")
+                      help="Set the second info block for the backend.")
 
     parser.add_option_group(group)
 
@@ -221,7 +221,7 @@ def main():
         sticks = [blinkstick.find_by_serial(options.serial)]
 
         if len(sticks) == 0:
-            print("BlinkStick with serial number " + options.device + " not found...")
+            print("BlinkStick with serial number " + options.backend + " not found...")
             return 64
 
     #Global action

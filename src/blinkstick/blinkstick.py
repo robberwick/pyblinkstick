@@ -2,15 +2,20 @@ from importlib.metadata import version
 import time
 import sys
 import re
+
+from blinkstick.constants import VENDOR_ID, PRODUCT_ID
+from blinkstick.exceptions import BlinkStickException
+
 try:
     from collections.abc import Callable
 except ImportError:
     from collections import Callable
 
 if sys.platform == "win32":
+    from blinkstick.backends.win32 import Win32Backend as USBBackend
     import pywinusb.hid as hid
-    from ctypes import *
 else:
+    from blinkstick.backends.unix_like import UnixLikeBackend as USBBackend
     import usb.core
     import usb.util
 
@@ -20,18 +25,12 @@ from random import randint
 Main module to control BlinkStick and BlinkStick Pro devices.
 """
 
-VENDOR_ID = 0x20a0
-PRODUCT_ID = 0x41e5
-
-class BlinkStickException(Exception):
-    pass
-
 
 class BlinkStick(object):
     """
     BlinkStick class is designed to control regular BlinkStick devices, or BlinkStick Pro
     devices in Normal or Inverse modes. Please refer to L{BlinkStick.set_mode} for more details
-    about BlinkStick Pro device modes.
+    about BlinkStick Pro backend modes.
 
     Code examples on how you can use this class are available here:
 
@@ -205,103 +204,44 @@ class BlinkStick(object):
         Constructor for the class.
 
         @type  error_reporting: Boolean
-        @param error_reporting: display errors if they occur during communication with the device
+        @param error_reporting: display errors if they occur during communication with the backend
         """
         self.error_reporting = error_reporting
 
         if device:
-            self.device = device
-            if sys.platform == "win32":
-                self.device.open()
-                self.reports = self.device.find_feature_reports()
-            else:
-                self.open_device(device)
-
+            self.backend = USBBackend(device)
             self.bs_serial = self.get_serial()
 
-    def _usb_get_string(self, device, index):
-        try:
-            return usb.util.get_string(device, index, 1033)
-        except usb.USBError:
-            # Could not communicate with BlinkStick device
-            # attempt to find it again based on serial
-
-            if self._refresh_device():
-                return usb.util.get_string(self.device, index, 1033)
-            else:
-                raise BlinkStickException("Could not communicate with BlinkStick {0} - it may have been removed".format(self.bs_serial))
-
-    def _usb_ctrl_transfer(self, bmRequestType, bRequest, wValue, wIndex, data_or_wLength):
-        if sys.platform == "win32":
-            if bmRequestType == 0x20:
-                if sys.version_info[0] < 3:
-                    data = (c_ubyte * len(data_or_wLength))(*[c_ubyte(ord(c)) for c in data_or_wLength])
-                else:
-                    data = (c_ubyte * len(data_or_wLength))(*[c_ubyte(c) for c in data_or_wLength])
-                data[0] = wValue
-                if not self.device.send_feature_report(data):
-                    if self._refresh_device():
-                        self.device.send_feature_report(data)
-                    else:
-                        raise BlinkStickException("Could not communicate with BlinkStick {0} - it may have been removed".format(self.bs_serial))
-
-            elif bmRequestType == 0x80 | 0x20:
-                return self.reports[wValue - 1].get()
-        else:
-            try:
-                return self.device.ctrl_transfer(bmRequestType, bRequest, wValue, wIndex, data_or_wLength)
-            except usb.USBError:
-                # Could not communicate with BlinkStick device
-                # attempt to find it again based on serial
-
-                if self._refresh_device():
-                    return self.device.ctrl_transfer(bmRequestType, bRequest, wValue, wIndex, data_or_wLength)
-                else:
-                    raise BlinkStickException("Could not communicate with BlinkStick {0} - it may have been removed".format(self.bs_serial))
-
-    def _refresh_device(self):
-        if not hasattr(self, 'bs_serial'):
-            return False
-        d = find_by_serial(self.bs_serial)
-        if d:
-            self.device = d.device
-            return True
 
     def get_serial(self):
         """
-        Returns the serial number of device.::
+        Returns the serial number of backend.::
 
             BSnnnnnn-1.0
             ||  |    | |- Software minor version
             ||  |    |--- Software major version
             ||  |-------- Denotes sequential number
-            ||----------- Denotes BlinkStick device
+            ||----------- Denotes BlinkStick backend
 
-        Software version defines the capabilities of the device
+        Software version defines the capabilities of the backend
 
         @rtype: str
-        @return: Serial number of the device
+        @return: Serial number of the backend
         """
-        if sys.platform == "win32":
-            return self.device.serial_number
-        else:
-            return self._usb_get_string(self.device, 3)
+        return self.backend.get_serial()
 
     def get_manufacturer(self):
         """
-        Get the manufacturer of the device
+        Get the manufacturer of the backend
 
         @rtype: str
         @return: Device manufacturer's name
         """
-        if sys.platform == "win32":
-            return self.device.vendor_name
-        else:
-            return self._usb_get_string(self.device, 1)
+        return self.backend.get_manufacturer()
 
     def get_variant(self):
         """
-        Get the product variant of the device.
+        Get the product variant of the backend.
 
         @rtype: int
         @return: BlinkStick.UNKNOWN, BlinkStick.BLINKSTICK, BlinkStick.BLINKSTICK_PRO and etc
@@ -311,10 +251,7 @@ class BlinkStick(object):
         major = serial[-3]
         minor = serial[-1]
 
-        if sys.platform == "win32":
-            version_attribute = self.device.version_number
-        else:
-            version_attribute = self.device.bcdDevice
+        version_attribute = self.backend.get_version_attribute()
 
         if major == "1":
             return self.BLINKSTICK
@@ -336,7 +273,7 @@ class BlinkStick(object):
 
     def get_variant_string(self):
         """
-        Get the product variant of the device as string.
+        Get the product variant of the backend as string.
 
         @rtype: string
         @return: "BlinkStick", "BlinkStick Pro", etc
@@ -360,28 +297,25 @@ class BlinkStick(object):
 
     def get_description(self):
         """
-        Get the description of the device
+        Get the description of the backend
 
         @rtype: str
         @return: Device description
         """
-        if sys.platform == "win32":
-            return self.device.product_name
-        else:
-            return self._usb_get_string(self.device, 2)
+        return self.backend.get_description()
 
     def set_error_reporting(self, error_reporting):
         """
         Enable or disable error reporting
 
         @type  error_reporting: Boolean
-        @param error_reporting: display errors if they occur during communication with the device
+        @param error_reporting: display errors if they occur during communication with the backend
         """
         self.error_reporting = error_reporting
 
     def set_color(self, channel=0, index=0, red=0, green=0, blue=0, name=None, hex=None):
         """
-        Set the color to the device as RGB
+        Set the color to the backend as RGB
 
         @type  red: int
         @param red: Red color intensity 0 is off, 255 is full red intensity
@@ -412,10 +346,10 @@ class BlinkStick(object):
             report_id = 0x0005
 
         if self.error_reporting:
-            self._usb_ctrl_transfer(0x20, 0x9, report_id, 0, control_string)
+            self.backend.control_transfer(0x20, 0x9, report_id, 0, control_string)
         else:
             try:
-                self._usb_ctrl_transfer(0x20, 0x9, report_id, 0, control_string)
+                self.backend.control_transfer(0x20, 0x9, report_id, 0, control_string)
             except Exception:
                 pass
 
@@ -443,7 +377,7 @@ class BlinkStick(object):
 
     def _get_color_rgb(self, index=0):
         if index == 0:
-            device_bytes = self._usb_ctrl_transfer(0x80 | 0x20, 0x1, 0x0001, 0, 33)
+            device_bytes = self.backend.control_transfer(0x80 | 0x20, 0x1, 0x0001, 0, 33)
             if self.inverse:
                 return [255 - device_bytes[1], 255 - device_bytes[2], 255 - device_bytes[3]]
             else:
@@ -459,12 +393,12 @@ class BlinkStick(object):
 
     def get_color(self, index=0, color_format='rgb'):
         """
-        Get the current device color in the defined format.
+        Get the current backend color in the defined format.
 
         Currently supported formats:
 
             1. rgb (default) - Returns values as 3-tuple (r,g,b)
-            2. hex - returns current device color as hexadecimal string
+            2. hex - returns current backend color as hexadecimal string
 
             >>> b = blinkstick.find_first()
             >>> b.set_color(red=255,green=0,blue=0)
@@ -529,27 +463,27 @@ class BlinkStick(object):
             else:
                 report.append(0)
 
-        self._usb_ctrl_transfer(0x20, 0x9, report_id, 0, bytes(bytearray(report)))
+        self.backend.control_transfer(0x20, 0x9, report_id, 0, bytes(bytearray(report)))
 
     def get_led_data(self, count):
         """
-        Get LED data frame on the device.
+        Get LED data frame on the backend.
 
         @type  count: int
         @param count: How much data to retrieve. Can be in the range of 0..64*3
         @rtype: int[0..64*3]
-        @return: LED data currently stored in the RAM of the device
+        @return: LED data currently stored in the RAM of the backend
         """
 
         report_id, max_leds = self._determine_report_id(count)
 
-        device_bytes = self._usb_ctrl_transfer(0x80 | 0x20, 0x1, report_id, 0, max_leds * 3 + 2)
+        device_bytes = self.backend.control_transfer(0x80 | 0x20, 0x1, report_id, 0, max_leds * 3 + 2)
 
         return device_bytes[2: 2 + count * 3]
 
     def set_mode(self, mode):
         """
-        Set device mode for BlinkStick Pro. Device currently supports the following modes:
+        Set backend mode for BlinkStick Pro. Device currently supports the following modes:
 
             - 0 - (default) use R, G and B channels to control single RGB LED
             - 1 - same as 0, but inverse mode
@@ -564,7 +498,7 @@ class BlinkStick(object):
         """
         control_string = bytes(bytearray([4, mode]))
 
-        self._usb_ctrl_transfer(0x20, 0x9, 0x0004, 0, control_string)
+        self.backend.control_transfer(0x20, 0x9, 0x0004, 0, control_string)
 
     def get_mode(self):
         """
@@ -582,7 +516,7 @@ class BlinkStick(object):
         @return: Device mode
         """
 
-        device_bytes = self._usb_ctrl_transfer(0x80 | 0x20, 0x1, 0x0004, 0, 2)
+        device_bytes = self.backend.control_transfer(0x80 | 0x20, 0x1, 0x0004, 0, 2)
 
         if len(device_bytes) >= 2:
             return device_bytes[1]
@@ -598,7 +532,7 @@ class BlinkStick(object):
         """
         control_string = bytes(bytearray([0x81, count]))
 
-        self._usb_ctrl_transfer(0x20, 0x9, 0x81, 0, control_string)
+        self.backend.control_transfer(0x20, 0x9, 0x81, 0, control_string)
 
 
     def get_led_count(self):
@@ -609,7 +543,7 @@ class BlinkStick(object):
         @return: Number of LEDs
         """
 
-        device_bytes = self._usb_ctrl_transfer(0x80 | 0x20, 0x1, 0x81, 0, 2)
+        device_bytes = self.backend.control_transfer(0x80 | 0x20, 0x1, 0x81, 0, 2)
 
         if len(device_bytes) >= 2:
             return device_bytes[1]
@@ -618,17 +552,17 @@ class BlinkStick(object):
 
     def get_info_block1(self):
         """
-        Get the infoblock1 of the device.
+        Get the infoblock1 of the backend.
 
         This is a 32 byte array that can contain any data. It's supposed to
-        hold the "Name" of the device making it easier to identify rather than
+        hold the "Name" of the backend making it easier to identify rather than
         a serial number.
 
         @rtype: str
-        @return: InfoBlock1 currently stored on the device
+        @return: InfoBlock1 currently stored on the backend
         """
 
-        device_bytes = self._usb_ctrl_transfer(0x80 | 0x20, 0x1, 0x0002, 0, 33)
+        device_bytes = self.backend.control_transfer(0x80 | 0x20, 0x1, 0x0002, 0, 33)
         result = ""
         for i in device_bytes[1:]:
             if i == 0:
@@ -638,14 +572,14 @@ class BlinkStick(object):
 
     def get_info_block2(self):
         """
-        Get the infoblock2 of the device.
+        Get the infoblock2 of the backend.
 
         This is a 32 byte array that can contain any data.
 
         @rtype: str
-        @return: InfoBlock2 currently stored on the device
+        @return: InfoBlock2 currently stored on the backend
         """
-        device_bytes = self._usb_ctrl_transfer(0x80 | 0x20, 0x1, 0x0003, 0, 33)
+        device_bytes = self.backend.control_transfer(0x80 | 0x20, 0x1, 0x0003, 0, 33)
         result = ""
         for i in device_bytes[1:]:
             if i == 0:
@@ -679,9 +613,9 @@ class BlinkStick(object):
         It fills the rest of 32 bytes with zeros.
 
         @type  data: str
-        @param data: InfoBlock1 for the device to set
+        @param data: InfoBlock1 for the backend to set
         """
-        self._usb_ctrl_transfer(0x20, 0x9, 0x0002, 0, self._data_to_message(data))
+        self.backend.control_transfer(0x20, 0x9, 0x0002, 0, self._data_to_message(data))
 
     def set_info_block2(self, data):
         """
@@ -690,13 +624,13 @@ class BlinkStick(object):
         It fills the rest of 32 bytes with zeros.
 
         @type  data: str
-        @param data: InfoBlock2 for the device to set
+        @param data: InfoBlock2 for the backend to set
         """
-        self._usb_ctrl_transfer(0x20, 0x9, 0x0003, 0, self._data_to_message(data))
+        self.backend.control_transfer(0x20, 0x9, 0x0003, 0, self._data_to_message(data))
 
     def set_random_color(self):
         """
-        Sets random color to the device.
+        Sets random color to the backend.
         """
         self.set_color(name="random")
 
@@ -814,15 +748,15 @@ class BlinkStick(object):
         self.set_color(channel=channel, index=index, red=r_end, green=g_end, blue=b_end)
 
     def open_device(self, d):
-        """Open device.
+        """Open backend.
         @param d: Device to open
         """
-        if self.device is None:
+        if self.backend is None:
             raise BlinkStickException("Could not find BlinkStick...")
 
-        if self.device.is_kernel_driver_active(0):
+        if self.backend.is_kernel_driver_active(0):
             try:
-                self.device.detach_kernel_driver(0)
+                self.backend.detach_kernel_driver(0)
             except usb.core.USBError as e:
                 raise BlinkStickException("Could not detach kernel driver: %s" % str(e))
 
@@ -831,7 +765,7 @@ class BlinkStick(object):
     def get_inverse(self):
         """
         Get the value of inverse mode. This applies only to BlinkStick. Please use L{set_mode} for BlinkStick Pro
-        to permanently set the inverse mode to the device.
+        to permanently set the inverse mode to the backend.
 
         @rtype: bool
         @return: True if inverse mode, otherwise false
@@ -841,7 +775,7 @@ class BlinkStick(object):
     def set_inverse(self, value):
         """
         Set inverse mode. This applies only to BlinkStick. Please use L{set_mode} for BlinkStick Pro
-        to permanently set the inverse mode to the device.
+        to permanently set the inverse mode to the backend.
 
         @type  value: bool
         @param value: True/False to set the inverse mode
@@ -975,7 +909,7 @@ class BlinkStick(object):
 class BlinkStickPro(object):
     """
     BlinkStickPro class is specifically designed to control the individually
-    addressable LEDs connected to the device. The tutorials section contains
+    addressable LEDs connected to the backend. The tutorials section contains
     all the details on how to connect them to BlinkStick Pro.
 
     U{http://www.blinkstick.com/help/tutorials}
@@ -1079,7 +1013,7 @@ class BlinkStickPro(object):
 
     def off(self):
         """
-        Set all pixels to black in on the device.
+        Set all pixels to black in on the backend.
         """
         self.clear()
         self.send_data_all()
@@ -1132,7 +1066,7 @@ class BlinkStickPro(object):
 class BlinkStickProMatrix(BlinkStickPro):
     """
     BlinkStickProMatrix class is specifically designed to control the individually
-    addressable LEDs connected to the device and arranged in a matrix. The tutorials section contains
+    addressable LEDs connected to the backend and arranged in a matrix. The tutorials section contains
     all the details on how to connect them to BlinkStick Pro with matrices.
 
     U{http://www.blinkstick.com/help/tutorials/blinkstick-pro-adafruit-neopixel-matrices}
@@ -1546,7 +1480,7 @@ class BlinkStickProMatrix(BlinkStickPro):
 
 def _find_blicksticks(find_all=True):
     if sys.platform == "win32":
-        devices = hid.HidDeviceFilter(vendor_id = VENDOR_ID, product_id = PRODUCT_ID).get_devices()
+        devices = hid.HidDeviceFilter(vendor_id =VENDOR_ID, product_id =PRODUCT_ID).get_devices()
         if find_all:
             return devices
         elif len(devices) > 0:
@@ -1566,7 +1500,7 @@ def find_all():
     @return: a list of BlinkStick objects or None if no devices found
     """
     result = []
-    for d in _find_blicksticks():
+    for d in USBBackend.find_blinksticks():
         result.extend([BlinkStick(device=d)])
 
     return result
@@ -1579,7 +1513,7 @@ def find_first():
     @rtype: BlinkStick
     @return: BlinkStick object or None if no devices are found
     """
-    d = _find_blicksticks(find_all=False)
+    d = USBBackend.find_blinksticks(find_all=False)
 
     if d:
         return BlinkStick(device=d)
@@ -1587,24 +1521,13 @@ def find_first():
 
 def find_by_serial(serial=None):
     """
-    Find BlinkStick device based on serial number.
+    Find BlinkStick backend based on serial number.
 
     @rtype: BlinkStick
     @return: BlinkStick object or None if no devices are found
     """
 
-    devices = []
-    if sys.platform == "win32":
-        devices = [d for d in _find_blicksticks()
-                   if d.serial_number == serial]
-    else:
-        for d in _find_blicksticks():
-            try:
-                if usb.util.get_string(d, 3, 1033) == serial:
-                    devices = [d]
-                    break
-            except Exception as e:
-                print("{0}".format(e))
+    devices = USBBackend.find_by_serial(serial=serial)
 
     if devices:
         return BlinkStick(device=devices[0])
