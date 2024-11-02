@@ -6,11 +6,6 @@ from blinkstick.colors import hex_to_rgb, name_to_rgb, remap_color, remap_rgb_va
 from blinkstick.constants import VENDOR_ID, PRODUCT_ID
 from blinkstick.exceptions import BlinkStickException
 
-try:
-    from collections.abc import Callable
-except ImportError:
-    from collections import Callable
-
 if sys.platform == "win32":
     from blinkstick.backends.win32 import Win32Backend as USBBackend
     import pywinusb.hid as hid
@@ -243,7 +238,7 @@ class BlinkStick:
         r, g, b = self._get_color_rgb(index)
         return '#%02x%02x%02x' % (r, g, b)
 
-    def get_color(self, index=0, color_format='rgb'):
+    def get_color(self, index: int=0, color_format: str='rgb'):
         """
         Get the current backend color in the defined format.
 
@@ -270,10 +265,10 @@ class BlinkStick:
 
         # Attempt to find a function to return the appropriate format
         get_color_func = getattr(self, "_get_color_%s" % color_format, self._get_color_rgb)
-        if isinstance(get_color_func, Callable):
+        if callable(get_color_func):
             return get_color_func(index)
         else:
-            # Should never get here, as we should always default to self._get_color_rgb
+            # If the function is not callable, raise an exception
             raise BlinkStickException("Could not return current color in format %s" % color_format)
 
     def _determine_report_id(self, led_count):
