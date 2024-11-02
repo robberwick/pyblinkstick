@@ -26,7 +26,7 @@ Main module to control BlinkStick and BlinkStick Pro devices.
 """
 
 
-class BlinkStick(object):
+class BlinkStick:
     """
     BlinkStick class is designed to control regular BlinkStick devices, or BlinkStick Pro
     devices in Normal or Inverse modes. Please refer to L{BlinkStick.set_mode} for more details
@@ -906,7 +906,7 @@ class BlinkStick(object):
         """
         return self._hex_to_rgb(self._name_to_hex(name))
 
-class BlinkStickPro(object):
+class BlinkStickPro:
     """
     BlinkStickPro class is specifically designed to control the individually
     addressable LEDs connected to the backend. The tutorials section contains
