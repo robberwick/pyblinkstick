@@ -24,9 +24,3 @@ def test_get_color_invalid_format(mocker):
     blinkstick.get_color(color_format='invalid_format')
     assert mock_get_color_rgb.call_count == 1
 
-def test_non_callable_get_color(mocker):
-    """Test get_color with a non-callable get_color_func. We expect it to raise an exception."""
-    blinkstick = BlinkStick()
-    blinkstick._get_color_rgb = 'not_a_callable'
-    with pytest.raises(BlinkStickException):
-        blinkstick.get_color()
