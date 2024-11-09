@@ -3,7 +3,7 @@ import time
 from importlib.metadata import version
 
 from blinkstick.colors import hex_to_rgb, name_to_rgb, remap_color, remap_rgb_value, remap_rgb_value_reverse
-from blinkstick.constants import VENDOR_ID, PRODUCT_ID
+from blinkstick.constants import VENDOR_ID, PRODUCT_ID, BlinkStickVariant
 from blinkstick.exceptions import BlinkStickException
 
 if sys.platform == "win32":
@@ -31,16 +31,6 @@ class BlinkStick:
 
     U{https://github.com/arvydas/blinkstick-python/wiki}
     """
-
-
-
-    UNKNOWN = 0
-    BLINKSTICK = 1
-    BLINKSTICK_PRO = 2
-    BLINKSTICK_STRIP = 3
-    BLINKSTICK_SQUARE = 4
-    BLINKSTICK_NANO = 5
-    BLINKSTICK_FLEX = 6
 
     inverse = False
     error_reporting = True
@@ -86,61 +76,29 @@ class BlinkStick:
         """
         return self.backend.get_manufacturer()
 
-    def get_variant(self):
+    def get_variant(self) -> BlinkStickVariant:
         """
         Get the product variant of the backend.
 
         @rtype: int
-        @return: BlinkStick.UNKNOWN, BlinkStick.BLINKSTICK, BlinkStick.BLINKSTICK_PRO and etc
+        @return: BlinkStickVariant.UNKNOWN, BlinkStickVariant.BLINKSTICK, BlinkStickVariant.BLINKSTICK_PRO and etc
         """
 
         serial = self.get_serial()
         major = serial[-3]
-        minor = serial[-1]
 
         version_attribute = self.backend.get_version_attribute()
 
-        if major == "1":
-            return self.BLINKSTICK
-        elif major == "2":
-            return self.BLINKSTICK_PRO
-        elif major == "3":
-            if version_attribute == 0x200:
-                return self.BLINKSTICK_SQUARE
-            elif version_attribute == 0x201:
-                return self.BLINKSTICK_STRIP
-            elif version_attribute == 0x202:
-                return self.BLINKSTICK_NANO
-            elif version_attribute == 0x203:
-                return self.BLINKSTICK_FLEX
-            else:
-                return self.UNKNOWN
-        else:
-            return self.UNKNOWN
+        return BlinkStickVariant.identify(int(major), version_attribute)
 
-    def get_variant_string(self):
+    def get_variant_string(self) -> str:
         """
         Get the product variant of the backend as string.
 
         @rtype: string
         @return: "BlinkStick", "BlinkStick Pro", etc
         """
-        product = self.get_variant()
-
-        if product == self.BLINKSTICK:
-            return "BlinkStick"
-        elif product == self.BLINKSTICK_PRO:
-            return "BlinkStick Pro"
-        elif product == self.BLINKSTICK_SQUARE:
-            return "BlinkStick Square"
-        elif product == self.BLINKSTICK_STRIP:
-            return "BlinkStick Strip"
-        elif product == self.BLINKSTICK_NANO:
-            return "BlinkStick Nano"
-        elif product == self.BLINKSTICK_FLEX:
-            return "BlinkStick Flex"
-
-        return "Unknown"
+        return self.get_variant().description
 
     def get_description(self):
         """
