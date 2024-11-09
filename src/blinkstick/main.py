@@ -2,6 +2,7 @@
 
 from optparse import OptionParser, IndentedHelpFormatter, OptionGroup
 from blinkstick import blinkstick
+from blinkstick.constants import BlinkStickVariant
 import textwrap
 import sys
 import logging
@@ -81,7 +82,7 @@ def print_info(stick):
     print("    Serial:        {0}".format(stick.get_serial()))
     print("    Current Color: {0}".format(stick.get_color(color_format="hex")))
     print("    Mode:          {0}".format(stick.get_mode()))
-    if stick.get_variant() == blinkstick.BlinkStick.BLINKSTICK_FLEX:
+    if stick.get_variant() == BlinkStickVariant.BLINKSTICK_FLEX:
         try:
             count = stick.get_led_count()
         except:
