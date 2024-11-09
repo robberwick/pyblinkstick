@@ -1,6 +1,5 @@
 import re
-from enum import Enum
-
+from enum import Enum, auto
 
 HEX_COLOR_RE = re.compile(r'^#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})$')
 
@@ -179,6 +178,18 @@ def name_to_hex(name: str) -> str:
     '#daa520'
     """
     return Color.from_name(name).value
+
+
+class ColorFormat(Enum):
+    RGB = auto()
+    HEX = auto()
+
+    @classmethod
+    def from_name(cls, name):
+        try:
+            return cls[name.upper()]
+        except KeyError:
+            raise ValueError(f"'{name}' is not a supported color format.")
 
 
 def normalize_hex(hex_value: str) -> str:
