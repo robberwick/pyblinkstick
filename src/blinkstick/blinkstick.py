@@ -1,8 +1,16 @@
 import sys
 import time
+import warnings
 from importlib.metadata import version
 
-from blinkstick.colors import hex_to_rgb, name_to_rgb, remap_color, remap_rgb_value, remap_rgb_value_reverse
+from blinkstick.colors import (
+    hex_to_rgb,
+    name_to_rgb,
+    remap_color,
+    remap_rgb_value,
+    remap_rgb_value_reverse,
+    ColorFormat
+)
 from blinkstick.constants import VENDOR_ID, PRODUCT_ID, BlinkStickVariant
 from blinkstick.exceptions import BlinkStickException
 
@@ -196,7 +204,7 @@ class BlinkStick:
         r, g, b = self._get_color_rgb(index)
         return '#%02x%02x%02x' % (r, g, b)
 
-    def get_color(self, index: int=0, color_format: str='rgb'):
+    def get_color(self, index: int=0, color_mode: ColorFormat = ColorFormat.RGB, color_format: str=None):
         """
         Get the current backend color in the defined format.
 
@@ -209,25 +217,35 @@ class BlinkStick:
             >>> b.set_color(red=255,green=0,blue=0)
             >>> (r,g,b) = b.get_color() # Get color as rbg tuple
             (255,0,0)
-            >>> hex = b.get_color(color_format='hex') # Get color as hex string
+            >>> hex = b.get_color(color_mode=ColorFormat.HEX) # Get color as hex string
             '#ff0000'
 
         @type  index: int
         @param index: the index of the LED
+        @type  color_mode: ColorFormat
+        @param color_mode: the format to return the color in (ColorFormat.RGB or ColorFormat.HEX) - defaults to ColorFormat.RGB
         @type  color_format: str
-        @param color_format: "rgb" or "hex". Defaults to "rgb".
+        @param color_format: "rgb" or "hex". Defaults to "rgb". Deprecated, use color_mode instead.
 
         @rtype: (int, int, int) or str
         @return: Either 3-tuple for R, G and B values, or hex string
         """
+        # color_format is deprecated, and color_mode should be used instead
+        # if color_format is specified, then raise a DeprecationWarning, but attempt to convert it to a ColorFormat enum
+        # if it's not possible, then default to ColorFormat.RGB, in line with the previous behavior
+        if color_format:
+            warnings.warn("color_format is deprecated, please use color_mode instead", DeprecationWarning)
+            try:
+                color_mode = ColorFormat.from_name(color_format)
+            except ValueError:
+                color_mode = ColorFormat.RGB
 
-        # Attempt to find a function to return the appropriate format
-        get_color_func = getattr(self, "_get_color_%s" % color_format, self._get_color_rgb)
-        if callable(get_color_func):
-            return get_color_func(index)
-        else:
-            # If the function is not callable, raise an exception
-            raise BlinkStickException("Could not return current color in format %s" % color_format)
+        color_funcs = {
+            ColorFormat.RGB: self._get_color_rgb,
+            ColorFormat.HEX: self._get_color_hex
+        }
+
+        return color_funcs.get(color_mode, ColorFormat.RGB)(index)
 
     def _determine_report_id(self, led_count):
         report_id = 9
@@ -255,7 +273,7 @@ class BlinkStick:
         @type  channel: int
         @param channel: the channel which to send data to (R=0, G=1, B=2)
         @type  data: int[0..64*3]
-        @param data: The LED data frame in GRB format
+        @param data: The LED data frame in GRB color_mode
         """
 
         report_id, max_leds = self._determine_report_id(len(data))
