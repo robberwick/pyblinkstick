@@ -40,7 +40,7 @@ class BlinkStick:
     U{https://github.com/arvydas/blinkstick-python/wiki}
     """
 
-    inverse = False
+    inverse: bool
     error_reporting = True
     max_rgb_value: int
 
@@ -53,6 +53,7 @@ class BlinkStick:
         """
         self.error_reporting = error_reporting
         self.max_rgb_value = 255
+        self.inverse = False
 
         if device:
             self.backend = USBBackend(device)
@@ -586,7 +587,7 @@ class BlinkStick:
 
         return True
 
-    def get_inverse(self):
+    def get_inverse(self) -> bool:
         """
         Get the value of inverse mode. This applies only to BlinkStick. Please use L{set_mode} for BlinkStick Pro
         to permanently set the inverse mode to the backend.
@@ -596,7 +597,7 @@ class BlinkStick:
         """
         return self.inverse
 
-    def set_inverse(self, value):
+    def set_inverse(self, value: bool) -> None:
         """
         Set inverse mode. This applies only to BlinkStick. Please use L{set_mode} for BlinkStick Pro
         to permanently set the inverse mode to the backend.
@@ -604,7 +605,9 @@ class BlinkStick:
         @type  value: bool
         @param value: True/False to set the inverse mode
         """
-        self.inverse = value
+        if type(value) is str:
+            value = value.lower() == "true"
+        self.inverse = bool(value)
 
     def set_max_rgb_value(self, value: int) -> None:
         """
