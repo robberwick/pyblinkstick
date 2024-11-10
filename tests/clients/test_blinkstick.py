@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from blinkstick import ColorFormat
 from blinkstick.blinkstick import BlinkStick
 from blinkstick.constants import BlinkStickVariant
 from pytest_mock import MockFixture
@@ -156,4 +157,71 @@ def test_set_max_rgb_value_type_checking(make_blinkstick):
 
     # Test setting a float value
     bs.set_max_rgb_value(100.5)
+    assert bs.get_max_rgb_value() == 100
+
+
+def test_inverse_default(make_blinkstick):
+    """Test that the default inverse is False."""
+    bs = make_blinkstick()
+    assert bs.get_inverse() == False
+
+
+def test_inverse_not_class_attribute(make_blinkstick):
+    """Test that the inverse is not a class attribute."""
+    bs = make_blinkstick()
+    assert not hasattr(BlinkStick, 'inverse')
+    assert hasattr(bs, 'inverse')
+
+
+@pytest.mark.parametrize("input_value, expected_result", [
+    pytest.param(True, True, id="True==True"),
+    pytest.param(False, False, id="False==False"),
+])
+def test_inverse_set_and_get(make_blinkstick, input_value, expected_result):
+    """Test that we can set and get the inverse."""
+    bs = make_blinkstick()
+    bs.set_inverse(input_value)
+    assert bs.get_inverse() == expected_result
+
+@pytest.mark.parametrize("input_value, expected_result", [
+    pytest.param(True, True, id="True==True"),
+    pytest.param("True", True, id="StringTrue==True"),
+    pytest.param(1.0, True, id="1.0==True"),
+    pytest.param(0, False, id="0==False"),
+    pytest.param("False", False, id="StringFalse==False"),
+    pytest.param(False, False, id="False==False"),
+    pytest.param(0.0, False, id="0.0==False"),
+    pytest.param("", False, id="EmptyString==False"),
+    pytest.param([], False, id="EmptyList==False"),
+    pytest.param({}, False, id="EmptyDict==False"),
+    pytest.param(None, False, id="None==False"),
+])
+def test_set_inverse_type_checking(make_blinkstick, input_value, expected_result):
+    """Test that set_inverse performs type checking and coercion."""
+    bs = make_blinkstick()
+    bs.set_inverse(input_value)
+    assert bs.get_inverse() == expected_result
+
+
+@pytest.mark.parametrize("color_mode, ctrl_transfer_bytes, color, inverse, expected_color", [
+    pytest.param(ColorFormat.RGB, (0, 255, 0, 0), (255, 0, 0), False, [255, 0, 0], id="RGB, NoInverse"),
+    pytest.param(ColorFormat.HEX, (0, 255, 0, 0), '#ff0000', False, '#ff0000', id="Hex, NoInverse"),
+    pytest.param(ColorFormat.RGB, (0, 255, 0, 0), (255, 0, 0), True, [0, 255, 255], id="RGB, Inverse"),
+    pytest.param(ColorFormat.HEX, (0, 255, 0, 0), '#ff0000', True, '#00ffff', id="Hex, Inverse"),
+])
+def test_inverse_correctly_inverts_rgb_color(make_blinkstick, color_mode, ctrl_transfer_bytes, color, inverse, expected_color):
+    """Test that the color is correctly inverted when the inverse flag is set."""
+    bs = make_blinkstick()
+    # mock the backend control_transfer method to return the 3 bytes of the color
+    bs.backend.control_transfer = MagicMock(return_value=ctrl_transfer_bytes)
+
+    bs.set_inverse(inverse)
+    assert bs.get_color(color_mode=color_mode) == expected_color
+
+
+def test_inverse_does_not_affect_max_rgb_value(make_blinkstick):
+    """Test that the inverse flag does not affect the max_rgb_value."""
+    bs = make_blinkstick()
+    bs.set_max_rgb_value(100)
+    bs.set_inverse(True)
     assert bs.get_max_rgb_value() == 100
