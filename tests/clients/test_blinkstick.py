@@ -7,7 +7,7 @@ from blinkstick.blinkstick import BlinkStick
 from blinkstick.constants import BlinkStickVariant
 from pytest_mock import MockFixture
 
-from tests.conftest import blinkstick
+from tests.conftest import make_blinkstick
 
 
 def test_instantiate():
@@ -35,11 +35,12 @@ def test_instantiate():
     "v3,Unknown==Unknown",
     "v0,0==Unknown"
 ])
-def test_get_variant(blinkstick, serial, version_attribute, expected_variant, expected_variant_value):
-    blinkstick.get_serial = MagicMock(return_value=serial)
-    blinkstick.backend.get_version_attribute = MagicMock(return_value=version_attribute)
-    assert blinkstick.get_variant() == expected_variant
-    assert blinkstick.get_variant().value == expected_variant_value
+def test_get_variant(make_blinkstick, serial, version_attribute, expected_variant, expected_variant_value):
+    bs = make_blinkstick()
+    bs.get_serial = MagicMock(return_value=serial)
+    bs.backend.get_version_attribute = MagicMock(return_value=version_attribute)
+    assert bs.get_variant() == expected_variant
+    assert bs.get_variant().value == expected_variant_value
 
 
 @pytest.mark.parametrize("expected_variant, expected_name", [
@@ -59,31 +60,35 @@ def test_get_variant(blinkstick, serial, version_attribute, expected_variant, ex
     "6==BlinkStickFlex",
     "0==Unknown"
 ])
-def test_get_variant_string(blinkstick, expected_variant, expected_name):
+def test_get_variant_string(make_blinkstick, expected_variant, expected_name):
     """Test get_variant method for version 0 returns BlinkStick.UNKNOWN (0)"""
-    blinkstick.get_variant = MagicMock(return_value=expected_variant)
-    assert blinkstick.get_variant_string() == expected_name
+    bs = make_blinkstick()
+    bs.get_variant = MagicMock(return_value=expected_variant)
+    assert bs.get_variant_string() == expected_name
 
 
-def test_get_color_rgb_color_format(mocker: MockFixture, blinkstick: BlinkStick):
+def test_get_color_rgb_color_format(mocker: MockFixture, make_blinkstick):
     """Test get_color with color_format='rgb'. We expect it to return the color in RGB format."""
+    bs = make_blinkstick()
     mock_get_color_rgb = mocker.Mock(return_value=(255, 0, 0))
-    blinkstick._get_color_rgb = mock_get_color_rgb
-    assert blinkstick.get_color() == (255, 0, 0)
+    bs._get_color_rgb = mock_get_color_rgb
+    assert bs.get_color() == (255, 0, 0)
     assert mock_get_color_rgb.call_count == 1
 
 
-def test_get_color_hex_color_format(mocker: MockFixture, blinkstick: BlinkStick):
+def test_get_color_hex_color_format(mocker: MockFixture, make_blinkstick):
     """Test get_color with color_format='hex'. We expect it to return the color in hex format."""
+    bs = make_blinkstick()
     mock_get_color_hex = mocker.Mock(return_value='#ff0000')
-    blinkstick._get_color_hex = mock_get_color_hex
-    assert blinkstick.get_color(color_format='hex') == '#ff0000'
+    bs._get_color_hex = mock_get_color_hex
+    assert bs.get_color(color_format='hex') == '#ff0000'
     assert mock_get_color_hex.call_count == 1
 
 
-def test_get_color_invalid_color_format(mocker: MockFixture, blinkstick: BlinkStick):
+def test_get_color_invalid_color_format(mocker: MockFixture, make_blinkstick):
     """Test get_color with invalid color_format. We expect it not to raise an exception, but to default to RGB."""
+    bs = make_blinkstick()
     mock_get_color_rgb = mocker.Mock(return_value=(255, 0, 0))
-    blinkstick._get_color_rgb = mock_get_color_rgb
-    blinkstick.get_color(color_format='invalid_format')
+    bs._get_color_rgb = mock_get_color_rgb
+    bs.get_color(color_format='invalid_format')
     assert mock_get_color_rgb.call_count == 1
