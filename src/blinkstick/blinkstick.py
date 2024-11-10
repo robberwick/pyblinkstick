@@ -42,7 +42,7 @@ class BlinkStick:
 
     inverse = False
     error_reporting = True
-    max_rgb_value = 255
+    max_rgb_value: int
 
     def __init__(self, device=None, error_reporting=True):
         """
@@ -52,6 +52,7 @@ class BlinkStick:
         @param error_reporting: display errors if they occur during communication with the backend
         """
         self.error_reporting = error_reporting
+        self.max_rgb_value = 255
 
         if device:
             self.backend = USBBackend(device)
@@ -605,7 +606,7 @@ class BlinkStick:
         """
         self.inverse = value
 
-    def set_max_rgb_value(self, value):
+    def set_max_rgb_value(self, value: int) -> None:
         """
         Set RGB color limit. {set_color} function will automatically remap
         the values to maximum supplied.
@@ -613,9 +614,11 @@ class BlinkStick:
         @type  value: int
         @param value: 0..255 maximum value for each R, G and B color
         """
+        # convert to int and clamp to 0..255
+        value = max(0, min(255, int(value)))
         self.max_rgb_value = value
 
-    def get_max_rgb_value(self, max_rgb_value):
+    def get_max_rgb_value(self) -> int:
         """
         Get RGB color limit. {set_color} function will automatically remap
         the values to maximum set.
