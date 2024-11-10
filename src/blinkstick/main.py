@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 from optparse import OptionParser, IndentedHelpFormatter, OptionGroup
-from blinkstick import blinkstick
-from blinkstick.constants import BlinkStickVariant
 import textwrap
 import sys
 import logging
+
+from .blinkstick import get_blinkstick_package_version, find_all, find_by_serial
+from .constants import BlinkStickVariant
 logging.basicConfig()
 
 
@@ -71,7 +72,7 @@ class IndentedHelpFormatterWithNL(IndentedHelpFormatter):
 
     def format_usage(self, usage):
         return "BlinkStick control script %s\n(c) Agile Innovative Ltd 2013-2014\n\n%s" % (
-        blinkstick.get_blinkstick_package_version(), IndentedHelpFormatter.format_usage(self, usage))
+        get_blinkstick_package_version(), IndentedHelpFormatter.format_usage(self, usage))
 
 
 def print_info(stick):
@@ -217,9 +218,9 @@ def main():
     (options, args) = parser.parse_args()
 
     if options.serial is None:
-        sticks = blinkstick.find_all()
+        sticks = find_all()
     else:
-        sticks = [blinkstick.find_by_serial(options.serial)]
+        sticks = [find_by_serial(options.serial)]
 
         if len(sticks) == 0:
             print("BlinkStick with serial number " + options.backend + " not found...")
