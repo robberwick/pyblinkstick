@@ -1,7 +1,6 @@
 from unittest.mock import MagicMock
 
 import pytest
-from blinkstick import BlinkStick
 
 from blinkstick.blinkstick import BlinkStick
 from blinkstick.constants import BlinkStickVariant
@@ -92,3 +91,69 @@ def test_get_color_invalid_color_format(mocker: MockFixture, make_blinkstick):
     bs._get_color_rgb = mock_get_color_rgb
     bs.get_color(color_format='invalid_format')
     assert mock_get_color_rgb.call_count == 1
+
+
+def test_max_rgb_value_default(make_blinkstick):
+    """Test that the default max_rgb_value is 255."""
+    bs = make_blinkstick()
+    assert bs.get_max_rgb_value() == 255
+
+def test_max_rgb_value_not_class_attribute(make_blinkstick):
+    """Test that the max_rgb_value is not a class attribute."""
+    bs = make_blinkstick()
+    assert not hasattr(BlinkStick, 'max_rgb_value')
+    assert hasattr(bs, 'max_rgb_value')
+
+def test_set_and_get_max_rgb_value(make_blinkstick):
+    """Test that we can set and get the max_rgb_value."""
+    # Create multiple instances of BlinkStick using the fixture
+    bs = make_blinkstick()
+
+    # Set different max_rgb_value for each instance
+    bs.set_max_rgb_value(100)
+
+    # Assert that each instance has its own max_rgb_value
+    assert bs.get_max_rgb_value() == 100
+
+    # Change the max_rgb_value again to ensure independence
+    bs.set_max_rgb_value(150)
+
+    # Assert the new values
+    assert bs.get_max_rgb_value() == 150
+
+
+def test_set_max_rgb_value_bounds(make_blinkstick):
+    """Test that set_max_rgb_value performs bounds checking."""
+    bs = make_blinkstick()
+
+    # Test setting a value within bounds
+    bs.set_max_rgb_value(100)
+    assert bs.get_max_rgb_value() == 100
+
+    # Test setting a value below the lower bound
+    bs.set_max_rgb_value(-1)
+    assert bs.get_max_rgb_value() == 0
+
+    # Test setting a value above the upper bound
+    bs.set_max_rgb_value(256)
+    assert bs.get_max_rgb_value() == 255
+
+def test_set_max_rgb_value_type_checking(make_blinkstick):
+    """Test that set_max_rgb_value performs type checking and coercion."""
+    bs = make_blinkstick()
+
+    # Test setting a valid integer value
+    bs.set_max_rgb_value(100)
+    assert bs.get_max_rgb_value() == 100
+
+    # Test setting a value that can be coerced to an integer
+    bs.set_max_rgb_value("150")
+    assert bs.get_max_rgb_value() == 150
+
+    # Test setting a value that cannot be coerced to an integer
+    with pytest.raises(ValueError):
+        bs.set_max_rgb_value("invalid")
+
+    # Test setting a float value
+    bs.set_max_rgb_value(100.5)
+    assert bs.get_max_rgb_value() == 100
