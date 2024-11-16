@@ -65,14 +65,14 @@ class Win32Backend(BaseBackend):
         elif bmRequestType == 0x80 | 0x20:
             return self.reports[wValue - 1].get()
 
-    def get_serial(self):
-        return self.device.serial_number
+    def get_serial(self) -> str:
+        return str(self.device.serial_number)
 
-    def get_manufacturer(self):
-        return self.device.vendor_name
+    def get_manufacturer(self) -> str:
+        return str(self.device.vendor_name)
 
-    def get_version_attribute(self):
-        return self.device.version_number
+    def get_version_attribute(self) -> int:
+        return int(self.device.version_number)
 
-    def get_description(self):
-        return self.device.product_name
+    def get_description(self) -> str:
+        return str(self.device.product_name)

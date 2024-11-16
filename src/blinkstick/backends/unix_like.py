@@ -10,6 +10,8 @@ from blinkstick.exceptions import BlinkStickException
 
 class UnixLikeBackend(BaseBackend):
 
+    serial: str
+
     def __init__(self, device=None):
         self.device = device
         super().__init__()
@@ -17,7 +19,7 @@ class UnixLikeBackend(BaseBackend):
             self.open_device()
             self.serial = self.get_serial()
 
-    def open_device(self):
+    def open_device(self) -> None:
         if self.device is None:
             raise BlinkStickException("Could not find BlinkStick...")
 
@@ -26,8 +28,6 @@ class UnixLikeBackend(BaseBackend):
                 self.device.detach_kernel_driver(0)
             except usb.core.USBError as e:
                 raise BlinkStickException("Could not detach kernel driver: %s" % str(e))
-
-        return True
 
     def _refresh_device(self):
         if not self.serial:
@@ -67,23 +67,23 @@ class UnixLikeBackend(BaseBackend):
     def get_serial(self) -> str:
         return self._usb_get_string(3)
 
-    def get_manufacturer(self):
+    def get_manufacturer(self)-> str:
         return self._usb_get_string(1)
 
-    def get_version_attribute(self):
-        return self.device.bcdDevice
+    def get_version_attribute(self) -> int:
+        return int(self.device.bcdDevice)
 
     def get_description(self):
         return self._usb_get_string(2)
 
-    def _usb_get_string(self, index):
+    def _usb_get_string(self, index: int) -> str:
         try:
-            return usb.util.get_string(self.device, index, 1033)
+            return str(usb.util.get_string(self.device, index, 1033))
         except usb.USBError:
             # Could not communicate with BlinkStick backend
             # attempt to find it again based on serial
 
             if self._refresh_device():
-                return usb.util.get_string(self.device, index, 1033)
+                return str(usb.util.get_string(self.device, index, 1033))
             else:
                 raise BlinkStickException("Could not communicate with BlinkStick {0} - it may have been removed".format(self.serial))

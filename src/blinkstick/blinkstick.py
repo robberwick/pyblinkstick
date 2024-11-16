@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 import time
 import warnings
@@ -44,7 +46,10 @@ class BlinkStick:
     error_reporting = True
     max_rgb_value: int
 
-    def __init__(self, device=None, error_reporting=True):
+    backend: USBBackend
+    bs_serial: str
+
+    def __init__(self, device=None, error_reporting: bool=True):
         """
         Constructor for the class.
 
@@ -60,7 +65,7 @@ class BlinkStick:
             self.bs_serial = self.get_serial()
 
 
-    def get_serial(self):
+    def get_serial(self) -> str:
         """
         Returns the serial number of backend.::
 
@@ -77,7 +82,7 @@ class BlinkStick:
         """
         return self.backend.get_serial()
 
-    def get_manufacturer(self):
+    def get_manufacturer(self) -> str:
         """
         Get the manufacturer of the backend
 
@@ -110,7 +115,7 @@ class BlinkStick:
         """
         return self.get_variant().description
 
-    def get_description(self):
+    def get_description(self) -> str:
         """
         Get the description of the backend
 
@@ -119,7 +124,7 @@ class BlinkStick:
         """
         return self.backend.get_description()
 
-    def set_error_reporting(self, error_reporting):
+    def set_error_reporting(self, error_reporting: bool) -> None:
         """
         Enable or disable error reporting
 
@@ -128,7 +133,7 @@ class BlinkStick:
         """
         self.error_reporting = error_reporting
 
-    def set_color(self, channel=0, index=0, red=0, green=0, blue=0, name=None, hex=None):
+    def set_color(self, channel: int = 0, index: int = 0, red: int = 0, green: int = 0, blue: int = 0, name: str | None = None, hex: str | None = None) -> None :
         """
         Set the color to the backend as RGB
 
@@ -168,7 +173,7 @@ class BlinkStick:
             except Exception:
                 pass
 
-    def _determine_rgb(self, red=0, green=0, blue=0, name=None, hex=None):
+    def _determine_rgb(self, red: int = 0, green: int = 0, blue: int = 0, name: str | None = None, hex: str | None = None) -> tuple[int, int, int]:
 
         try:
             if name:
@@ -190,7 +195,7 @@ class BlinkStick:
 
         return red, green, blue
 
-    def _get_color_rgb(self, index=0):
+    def _get_color_rgb(self, index: int = 0) -> tuple[int, int, int]:
         if index == 0:
             device_bytes = self.backend.control_transfer(0x80 | 0x20, 0x1, 0x0001, 0, 33)
             if self.inverse:
@@ -202,11 +207,11 @@ class BlinkStick:
 
             return [data[index * 3 + 1], data[index * 3], data[index * 3 + 2]]
 
-    def _get_color_hex(self, index=0):
+    def _get_color_hex(self, index: int = 0) -> str:
         r, g, b = self._get_color_rgb(index)
         return '#%02x%02x%02x' % (r, g, b)
 
-    def get_color(self, index: int=0, color_mode: ColorFormat = ColorFormat.RGB, color_format: str=None):
+    def get_color(self, index: int=0, color_mode: ColorFormat = ColorFormat.RGB, color_format: str=None) -> tuple[int, int, int] | str:
         """
         Get the current backend color in the defined format.
 
@@ -249,7 +254,7 @@ class BlinkStick:
 
         return color_funcs.get(color_mode, ColorFormat.RGB)(index)
 
-    def _determine_report_id(self, led_count):
+    def _determine_report_id(self, led_count: int) -> tuple[int, int]:
         report_id = 9
         max_leds = 64
 
@@ -268,7 +273,7 @@ class BlinkStick:
 
         return report_id, max_leds
 
-    def set_led_data(self, channel, data):
+    def set_led_data(self, channel: int, data: list[int]) -> None:
         """
         Send LED data frame.
 
@@ -290,7 +295,7 @@ class BlinkStick:
 
         self.backend.control_transfer(0x20, 0x9, report_id, 0, bytes(bytearray(report)))
 
-    def get_led_data(self, count):
+    def get_led_data(self, count: int) -> list[int]:
         """
         Get LED data frame on the backend.
 
@@ -306,7 +311,7 @@ class BlinkStick:
 
         return device_bytes[2: 2 + count * 3]
 
-    def set_mode(self, mode):
+    def set_mode(self, mode: int) -> None:
         """
         Set backend mode for BlinkStick Pro. Device currently supports the following modes:
 
@@ -325,7 +330,7 @@ class BlinkStick:
 
         self.backend.control_transfer(0x20, 0x9, 0x0004, 0, control_string)
 
-    def get_mode(self):
+    def get_mode(self) -> int:
         """
         Get BlinkStick Pro mode. Device currently supports the following modes:
 
@@ -348,7 +353,7 @@ class BlinkStick:
         else:
             return -1
 
-    def set_led_count(self, count):
+    def set_led_count(self, count: int) -> None:
         """
         Set number of LEDs for supported devices
 
@@ -360,7 +365,7 @@ class BlinkStick:
         self.backend.control_transfer(0x20, 0x9, 0x81, 0, control_string)
 
 
-    def get_led_count(self):
+    def get_led_count(self) -> int:
         """
         Get number of LEDs for supported devices
 
@@ -375,7 +380,7 @@ class BlinkStick:
         else:
             return -1
 
-    def get_info_block1(self):
+    def get_info_block1(self) -> str:
         """
         Get the infoblock1 of the backend.
 
@@ -395,7 +400,7 @@ class BlinkStick:
             result += chr(i)
         return result
 
-    def get_info_block2(self):
+    def get_info_block2(self) -> str:
         """
         Get the infoblock2 of the backend.
 
@@ -412,7 +417,7 @@ class BlinkStick:
             result += chr(i)
         return result
 
-    def _data_to_message(self, data):
+    def _data_to_message(self, data) -> bytes:
         """
         Helper method to convert a string to byte array of 32 bytes.
 
@@ -431,7 +436,7 @@ class BlinkStick:
 
         return bytes
 
-    def set_info_block1(self, data):
+    def set_info_block1(self, data: str) -> None:
         """
         Sets the infoblock1 with specified string.
 
@@ -442,7 +447,7 @@ class BlinkStick:
         """
         self.backend.control_transfer(0x20, 0x9, 0x0002, 0, self._data_to_message(data))
 
-    def set_info_block2(self, data):
+    def set_info_block2(self, data: str) -> None:
         """
         Sets the infoblock2 with specified string.
 
@@ -453,19 +458,19 @@ class BlinkStick:
         """
         self.backend.control_transfer(0x20, 0x9, 0x0003, 0, self._data_to_message(data))
 
-    def set_random_color(self):
+    def set_random_color(self) -> None:
         """
         Sets random color to the backend.
         """
         self.set_color(name="random")
 
-    def turn_off(self):
+    def turn_off(self) -> None:
         """
         Turns off LED.
         """
         self.set_color()
 
-    def pulse(self, channel=0, index=0, red=0, green=0, blue=0, name=None, hex=None, repeats=1, duration=1000, steps=50):
+    def pulse(self, channel: int = 0, index: int = 0, red: int = 0, green: int = 0, blue: int = 0, name: str | None = None, hex: str | None = None, repeats: int = 1, duration: int = 1000, steps: int = 50) -> None:
         """
         Morph to the specified color from black and back again.
 
@@ -491,7 +496,7 @@ class BlinkStick:
             self.morph(channel=channel, index=index, red=red, green=green, blue=blue, name=name, hex=hex, duration=duration, steps=steps)
             self.morph(channel=channel, index=index, red=0, green=0, blue=0, duration=duration, steps=steps)
 
-    def blink(self, channel=0, index=0, red=0, green=0, blue=0, name=None, hex=None, repeats=1, delay=500):
+    def blink(self, channel: int = 0, index: int = 0, red: int = 0, green: int = 0, blue: int = 0, name: str | None = None, hex: str | None = None, repeats: int = 1, delay: int = 500) -> None:
         """
         Blink the specified color.
 
@@ -518,7 +523,7 @@ class BlinkStick:
             time.sleep(ms_delay)
             self.set_color(channel=channel, index=index)
 
-    def morph(self, channel=0, index=0, red=0, green=0, blue=0, name=None, hex=None, duration=1000, steps=50):
+    def morph(self, channel: int = 0, index: int = 0, red: int = 0, green: int = 0, blue: int = 0, name: str | None = None, hex: str | None = None, duration: int = 1000, steps: int = 50) -> None:
         """
         Morph to the specified color.
 
@@ -645,7 +650,17 @@ class BlinkStickPro:
     U{https://github.com/arvydas/blinkstick-python/wiki#code-examples-for-blinkstick-pro}
     """
 
-    def __init__(self, r_led_count=0, g_led_count=0, b_led_count=0, delay=0.002, max_rgb_value=255):
+    r_led_count: int
+    g_led_count: int
+    b_led_count: int
+    fps_count: int
+    data_transmission_delay: float
+    max_rgb_value: int
+    data: list[list[list[int]]]
+    bstick: BlinkStick | None
+
+
+    def __init__(self, r_led_count: int = 0, g_led_count: int = 0, b_led_count: int = 0, delay: float = 0.002, max_rgb_value: int = 255):
         """
         Initialize BlinkStickPro class.
 
@@ -687,7 +702,7 @@ class BlinkStickPro:
 
         self.bstick = None
 
-    def set_color(self, channel, index, r, g, b, remap_values=True):
+    def set_color(self, channel: int, index: int, r: int, g: int, b: int, remap_values: bool = True) -> None:
         """
         Set the color of a single pixel
 
@@ -708,7 +723,7 @@ class BlinkStickPro:
 
         self.data[channel][index] = [g, r, b]
 
-    def get_color(self, channel, index):
+    def get_color(self, channel: int, index: int) -> tuple[int, int, int]:
         """
         Get the current color of a single pixel.
 
@@ -724,7 +739,7 @@ class BlinkStickPro:
         val = self.data[channel][index]
         return [val[1], val[0], val[2]]
 
-    def clear(self):
+    def clear(self) -> None:
         """
         Set all pixels to black in the frame buffer.
         """
@@ -737,14 +752,14 @@ class BlinkStickPro:
         for x in range(0, self.b_led_count):
             self.set_color(2, x, 0, 0, 0)
 
-    def off(self):
+    def off(self) -> None:
         """
         Set all pixels to black in on the backend.
         """
         self.clear()
         self.send_data_all()
 
-    def connect(self, serial=None):
+    def connect(self, serial: str | None = None):
         """
         Connect to the first BlinkStick found
 
@@ -759,7 +774,7 @@ class BlinkStickPro:
 
         return self.bstick is not None
 
-    def send_data(self, channel):
+    def send_data(self, channel: int) -> None:
         """
         Send data stored in the internal buffer to the channel.
 
@@ -776,7 +791,7 @@ class BlinkStickPro:
         except Exception as e:
             print("Exception: {0}".format(e))
 
-    def send_data_all(self):
+    def send_data_all(self) -> None:
         """
         Send data to all channels
         """
@@ -820,7 +835,17 @@ class BlinkStickProMatrix(BlinkStickPro):
 
     """
 
-    def __init__(self, r_columns=0, r_rows=0, g_columns=0, g_rows=0, b_columns=0, b_rows=0, delay=0.002, max_rgb_value=255):
+    r_columns: int
+    r_rows: int
+    g_columns: int
+    g_rows: int
+    b_columns: int
+    b_rows: int
+    rows: int
+    cols: int
+    matrix_data: list[list[int]]
+
+    def __init__(self, r_columns: int = 0, r_rows: int = 0, g_columns: int = 0, g_rows: int = 0, b_columns: int = 0, b_rows: int = 0, delay: float = 0.002, max_rgb_value: int = 255):
         """
         Initialize BlinkStickProMatrix class.
 
@@ -857,7 +882,7 @@ class BlinkStickProMatrix(BlinkStickPro):
         for i in range(0, self.rows * self.cols):
             self.matrix_data.append([0, 0, 0])
 
-    def set_color(self, x, y, r, g, b, remap_values=True):
+    def set_color(self, x: int, y: int, r: int, g: int, b: int, remap_values: bool = True) -> None:
         """
         Set the color of a single pixel in the internal framebuffer.
 
@@ -880,10 +905,10 @@ class BlinkStickProMatrix(BlinkStickPro):
 
         self.matrix_data[self._coord_to_index(x, y)] = [g, r, b]
 
-    def _coord_to_index(self, x, y):
+    def _coord_to_index(self, x: int, y: int) -> int:
         return y * self.cols + x
 
-    def get_color(self, x, y):
+    def get_color(self, x: int, y: int) -> tuple[int, int, int]:
         """
         Get the current color of a single pixel.
 
@@ -899,7 +924,7 @@ class BlinkStickProMatrix(BlinkStickPro):
         val = self.matrix_data[self._coord_to_index(x, y)]
         return [val[1], val[0], val[2]]
 
-    def shift_left(self, remove=False):
+    def shift_left(self, remove: bool = False) -> None:
         """
         Shift all LED values in the matrix to the left
 
@@ -925,7 +950,7 @@ class BlinkStickProMatrix(BlinkStickPro):
                 col = temp[y]
                 self.set_color(self.cols - 1, y, col[0], col[1], col[2], False)
 
-    def shift_right(self, remove=False):
+    def shift_right(self, remove: bool = False) -> None:
         """
         Shift all LED values in the matrix to the right
 
@@ -952,7 +977,7 @@ class BlinkStickProMatrix(BlinkStickPro):
                 col = temp[y]
                 self.set_color(0, y, col[0], col[1], col[2], False)
 
-    def shift_down(self, remove=False):
+    def shift_down(self, remove: bool = False) -> None:
         """
         Shift all LED values in the matrix down
 
@@ -979,7 +1004,7 @@ class BlinkStickProMatrix(BlinkStickPro):
                 col = temp[x]
                 self.set_color(x, 0, col[0], col[1], col[2], False)
 
-    def shift_up(self, remove=False):
+    def shift_up(self, remove: bool = False):
         """
         Shift all LED values in the matrix up
 
@@ -1006,7 +1031,7 @@ class BlinkStickProMatrix(BlinkStickPro):
                 col = temp[x]
                 self.set_color(x, self.rows - 1, col[0], col[1], col[2], False)
 
-    def number(self, x, y, n, r, g, b):
+    def number(self, x: int, y: int, n: int, r: int, g: int, b: int) -> None:
         """
         Render a 3x5 number n at location x,y and r,g,b color
 
@@ -1078,7 +1103,7 @@ class BlinkStickProMatrix(BlinkStickPro):
             self.set_color(x + 2, y + 1, r, g, b)
             self.set_color(x + 2, y + 3, r, g, b)
 
-    def rectangle(self, x1, y1, x2, y2, r, g, b):
+    def rectangle(self, x1: int, y1: int, x2: int, y2: int, r: int, g: int, b: int) -> None:
         """
         Draw a rectangle with it's corners at x1:y1 and x2:y2
 
@@ -1103,7 +1128,7 @@ class BlinkStickProMatrix(BlinkStickPro):
         self.line(x2, y1, x2, y2, r, g, b)
         self.line(x1, y2, x2, y2, r, g, b)
 
-    def line(self, x1, y1, x2, y2, r, g, b):
+    def line(self, x1: int, y1: int, x2: int, y2: int, r: int, g: int, b: int) -> list[tuple[int, int]]:
         """
         Draw a line from x1:y1 and x2:y2
 
@@ -1160,7 +1185,7 @@ class BlinkStickProMatrix(BlinkStickPro):
             points.reverse()
         return points
 
-    def clear(self):
+    def clear(self) -> None:
         """
         Set all pixels to black in the cached matrix
         """
@@ -1168,7 +1193,7 @@ class BlinkStickProMatrix(BlinkStickPro):
             for x in range(0, self.cols):
                 self.set_color(x, y, 0, 0, 0)
 
-    def send_data(self, channel):
+    def send_data(self, channel: int) -> None:
         """
         Send data stored in the internal buffer to the channel.
 
@@ -1204,7 +1229,7 @@ class BlinkStickProMatrix(BlinkStickPro):
 
         super(BlinkStickProMatrix, self).send_data(channel)
 
-def _find_blicksticks(find_all=True):
+def _find_blicksticks(find_all: bool = True) -> list[BlinkStick] | None:
     if sys.platform == "win32":
         devices = hid.HidDeviceFilter(vendor_id =VENDOR_ID, product_id =PRODUCT_ID).get_devices()
         if find_all:
@@ -1218,7 +1243,7 @@ def _find_blicksticks(find_all=True):
         return usb.core.find(find_all=find_all, idVendor=VENDOR_ID, idProduct=PRODUCT_ID)
 
 
-def find_all():
+def find_all() -> list[BlinkStick]:
     """
     Find all attached BlinkStick devices.
 
@@ -1232,7 +1257,7 @@ def find_all():
     return result
 
 
-def find_first():
+def find_first() -> BlinkStick | None:
     """
     Find first attached BlinkStick.
 
@@ -1245,7 +1270,7 @@ def find_first():
         return BlinkStick(device=d)
 
 
-def find_by_serial(serial=None):
+def find_by_serial(serial: str | None = None) -> BlinkStick | None:
     """
     Find BlinkStick backend based on serial number.
 
@@ -1259,5 +1284,5 @@ def find_by_serial(serial=None):
         return BlinkStick(device=devices[0])
 
 
-def get_blinkstick_package_version():
+def get_blinkstick_package_version() -> str:
     return version("blinkstick")
