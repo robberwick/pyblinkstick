@@ -132,6 +132,10 @@ class BlinkStick:
         """
         Set the color to the backend as RGB
 
+        @type  channel: int
+        @param channel: the channel which to send data to (R=0, G=1, B=2)
+        @type  index: int
+        @param index: the index of the LED
         @type  red: int
         @param red: Red color intensity 0 is off, 255 is full red intensity
         @type  green: int
@@ -469,6 +473,10 @@ class BlinkStick:
         """
         Morph to the specified color from black and back again.
 
+        @type  channel: int
+        @param channel: the channel which to send data to (R=0, G=1, B=2)
+        @type  index: int
+        @param index: the index of the LED
         @type  red: int
         @param red: Red color intensity 0 is off, 255 is full red intensity
         @type  green: int
@@ -495,6 +503,10 @@ class BlinkStick:
         """
         Blink the specified color.
 
+        @type  channel: int
+        @param channel: the channel which to send data to (R=0, G=1, B=2)
+        @type  index: int
+        @param index: the index of the LED
         @type  red: int
         @param red: Red color intensity 0 is off, 255 is full red intensity
         @type  green: int
@@ -522,6 +534,10 @@ class BlinkStick:
         """
         Morph to the specified color.
 
+        @type  channel: int
+        @param channel: the channel which to send data to (R=0, G=1, B=2)
+        @type  index: int
+        @param index: the index of the LED
         @type  red: int
         @param red: Red color intensity 0 is off, 255 is full red intensity
         @type  green: int
@@ -701,6 +717,8 @@ class BlinkStickPro:
         @param g: green color byte
         @type b: int
         @param b: blue color byte
+        @type remap_values: bool
+        @param remap_values: remap the values to maximum set in L{set_max_rgb_value}
         """
 
         if remap_values:
