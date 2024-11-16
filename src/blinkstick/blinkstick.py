@@ -200,7 +200,7 @@ class BlinkStick:
         else:
             data = self.get_led_data((index + 1) * 3)
 
-            return [data[index * 3 + 1], data[index * 3], data[index * 3 + 2]]
+            return data[index * 3 + 1], data[index * 3], data[index * 3 + 2]
 
     def _get_color_hex(self, index=0):
         r, g, b = self._get_color_rgb(index)
@@ -722,7 +722,7 @@ class BlinkStickPro:
         """
 
         val = self.data[channel][index]
-        return [val[1], val[0], val[2]]
+        return val[1], val[0], val[2]
 
     def clear(self):
         """
@@ -897,7 +897,7 @@ class BlinkStickProMatrix(BlinkStickPro):
         """
 
         val = self.matrix_data[self._coord_to_index(x, y)]
-        return [val[1], val[0], val[2]]
+        return val[1], val[0], val[2]
 
     def shift_left(self, remove=False):
         """
