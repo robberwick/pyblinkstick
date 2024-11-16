@@ -184,7 +184,7 @@ class BlinkStick:
         except ValueError:
             red = green = blue = 0
 
-        red, green, blue = remap_rgb_value([red, green, blue], self.max_rgb_value)
+        red, green, blue = remap_rgb_value((red, green, blue), self.max_rgb_value)
 
         # TODO - do smarts to determine input type from red var in case it is not int
 
@@ -540,7 +540,7 @@ class BlinkStick:
 
         r_end, g_end, b_end = self._determine_rgb(red=red, green=green, blue=blue, name=name, hex=hex)
         # descale the above values
-        r_end, g_end, b_end = remap_rgb_value_reverse([r_end, g_end, b_end], self.max_rgb_value)
+        r_end, g_end, b_end = remap_rgb_value_reverse((r_end, g_end, b_end), self.max_rgb_value)
 
         r_start, g_start, b_start = remap_rgb_value_reverse(self._get_color_rgb(index), self.max_rgb_value)
 
