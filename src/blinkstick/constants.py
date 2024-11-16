@@ -15,11 +15,11 @@ class BlinkStickVariant(Enum):
     BLINKSTICK_FLEX = (6, "BlinkStick Flex")
 
     @property
-    def value(self):
+    def value(self) -> int:
         return self._value_[0]
 
     @property
-    def description(self):
+    def description(self) -> str:
         return self._value_[1]
 
     @staticmethod

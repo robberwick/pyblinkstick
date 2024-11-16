@@ -29,17 +29,17 @@ class BaseBackend(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_serial(self):
+    def get_serial(self) -> str:
         raise NotImplementedError
 
     @abstractmethod
-    def get_manufacturer(self):
+    def get_manufacturer(self) -> str:
         raise NotImplementedError
 
     @abstractmethod
-    def get_version_attribute(self):
+    def get_version_attribute(self) -> int:
         raise NotImplementedError
 
     @abstractmethod
-    def get_description(self):
+    def get_description(self) -> str:
         raise NotImplementedError
