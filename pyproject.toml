@@ -17,7 +17,7 @@ dependencies = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
-dev = ["black", "isort"]
+dev = ["black", "isort", "mypy"]
 test = ["coverage", "pytest", "pytest-cov", "pytest-mock"]
 
 [project.scripts]
