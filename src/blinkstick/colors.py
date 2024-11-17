@@ -226,8 +226,11 @@ def normalize_hex(hex_value: str) -> str:
     ValueError: '0099cc' is not a valid hexadecimal color value.
 
     """
+    invalid_hex_value_msg = "'%s' is not a valid hexadecimal color value."
+    if not (hex_match := HEX_COLOR_RE.match(hex_value)):
+        raise ValueError(invalid_hex_value_msg % hex_value)
     try:
-        hex_digits = HEX_COLOR_RE.match(hex_value).groups()[0]
+        hex_digits = hex_match.groups()[0]
     except AttributeError:
         raise ValueError("'%s' is not a valid hexadecimal color value." % hex_value)
     if len(hex_digits) == 3:
