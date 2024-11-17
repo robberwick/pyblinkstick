@@ -46,7 +46,8 @@ class UnixLikeBackend(BaseBackend[usb.core.Device]):
 
     @staticmethod
     def find_by_serial(serial: str) -> list[usb.core.Device] | None:
-        for d in UnixLikeBackend.find_blinksticks():
+        found_devices = UnixLikeBackend.find_blinksticks() or []
+        for d in found_devices:
             try:
                 if usb.util.get_string(d, 3, 1033) == serial:
                     devices = [d]

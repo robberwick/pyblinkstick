@@ -25,9 +25,8 @@ class Win32Backend(BaseBackend[hid.HidDevice]):
 
     @staticmethod
     def find_by_serial(serial: str) -> list[hid.HidDevice] | None:
-        devices = [
-            d for d in Win32Backend.find_blinksticks() if d.serial_number == serial
-        ]
+        found_devices = Win32Backend.find_blinksticks() or []
+        devices = [d for d in found_devices if d.serial_number == serial]
 
         if len(devices) > 0:
             return devices
