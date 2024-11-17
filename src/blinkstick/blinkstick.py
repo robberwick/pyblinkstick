@@ -1437,6 +1437,7 @@ def find_first() -> BlinkStick | None:
     if d:
         return BlinkStick(device=d)
 
+    return None
 
 def find_by_serial(serial: str | None = None) -> BlinkStick | None:
     """
@@ -1450,6 +1451,8 @@ def find_by_serial(serial: str | None = None) -> BlinkStick | None:
 
     if devices:
         return BlinkStick(device=devices[0])
+
+    return None
 
 
 def get_blinkstick_package_version() -> str:
