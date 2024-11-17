@@ -454,7 +454,7 @@ class BlinkStick:
             result += chr(i)
         return result
 
-    def _data_to_message(self, data) -> bytes:
+    def _data_to_message(self, data: str) -> bytes:
         """
         Helper method to convert a string to byte array of 32 bytes.
 
@@ -464,14 +464,14 @@ class BlinkStick:
         @rtype: byte[32]
         @return: It fills the rest of bytes with zeros.
         """
-        bytes = [1]
+        byte_array = bytearray([1])
         for c in data:
-            bytes.append(ord(c))
+            byte_array.append(ord(c))
 
         for i in range(32 - len(data)):
-            bytes.append(0)
+            byte_array.append(0)
 
-        return bytes
+        return bytes(byte_array)
 
     def set_info_block1(self, data: str) -> None:
         """
