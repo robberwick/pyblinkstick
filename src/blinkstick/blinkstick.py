@@ -11,7 +11,7 @@ from blinkstick.colors import (
     remap_color,
     remap_rgb_value,
     remap_rgb_value_reverse,
-    ColorFormat
+    ColorFormat,
 )
 from blinkstick.constants import VENDOR_ID, PRODUCT_ID, BlinkStickVariant
 from blinkstick.exceptions import BlinkStickException
@@ -49,7 +49,7 @@ class BlinkStick:
     backend: USBBackend
     bs_serial: str
 
-    def __init__(self, device=None, error_reporting: bool=True):
+    def __init__(self, device=None, error_reporting: bool = True):
         """
         Constructor for the class.
 
@@ -63,7 +63,6 @@ class BlinkStick:
         if device:
             self.backend = USBBackend(device)
             self.bs_serial = self.get_serial()
-
 
     def get_serial(self) -> str:
         """
@@ -133,7 +132,16 @@ class BlinkStick:
         """
         self.error_reporting = error_reporting
 
-    def set_color(self, channel: int = 0, index: int = 0, red: int = 0, green: int = 0, blue: int = 0, name: str | None = None, hex: str | None = None) -> None :
+    def set_color(
+        self,
+        channel: int = 0,
+        index: int = 0,
+        red: int = 0,
+        green: int = 0,
+        blue: int = 0,
+        name: str | None = None,
+        hex: str | None = None,
+    ) -> None:
         """
         Set the color to the backend as RGB
 
@@ -153,7 +161,9 @@ class BlinkStick:
         @param hex: Specify color using hexadecimal color value e.g. '#FF3366'
         """
 
-        red, green, blue = self._determine_rgb(red=red, green=green, blue=blue, name=name, hex=hex)
+        red, green, blue = self._determine_rgb(
+            red=red, green=green, blue=blue, name=name, hex=hex
+        )
 
         r = int(round(red, 3))
         g = int(round(green, 3))
@@ -177,7 +187,14 @@ class BlinkStick:
             except Exception:
                 pass
 
-    def _determine_rgb(self, red: int = 0, green: int = 0, blue: int = 0, name: str | None = None, hex: str | None = None) -> tuple[int, int, int]:
+    def _determine_rgb(
+        self,
+        red: int = 0,
+        green: int = 0,
+        blue: int = 0,
+        name: str | None = None,
+        hex: str | None = None,
+    ) -> tuple[int, int, int]:
 
         try:
             if name:
@@ -201,9 +218,15 @@ class BlinkStick:
 
     def _get_color_rgb(self, index: int = 0) -> tuple[int, int, int]:
         if index == 0:
-            device_bytes = self.backend.control_transfer(0x80 | 0x20, 0x1, 0x0001, 0, 33)
+            device_bytes = self.backend.control_transfer(
+                0x80 | 0x20, 0x1, 0x0001, 0, 33
+            )
             if self.inverse:
-                return [255 - device_bytes[1], 255 - device_bytes[2], 255 - device_bytes[3]]
+                return [
+                    255 - device_bytes[1],
+                    255 - device_bytes[2],
+                    255 - device_bytes[3],
+                ]
             else:
                 return [device_bytes[1], device_bytes[2], device_bytes[3]]
         else:
@@ -213,9 +236,14 @@ class BlinkStick:
 
     def _get_color_hex(self, index: int = 0) -> str:
         r, g, b = self._get_color_rgb(index)
-        return '#%02x%02x%02x' % (r, g, b)
+        return "#%02x%02x%02x" % (r, g, b)
 
-    def get_color(self, index: int=0, color_mode: ColorFormat = ColorFormat.RGB, color_format: str=None) -> tuple[int, int, int] | str:
+    def get_color(
+        self,
+        index: int = 0,
+        color_mode: ColorFormat = ColorFormat.RGB,
+        color_format: str = None,
+    ) -> tuple[int, int, int] | str:
         """
         Get the current backend color in the defined format.
 
@@ -245,7 +273,10 @@ class BlinkStick:
         # if color_format is specified, then raise a DeprecationWarning, but attempt to convert it to a ColorFormat enum
         # if it's not possible, then default to ColorFormat.RGB, in line with the previous behavior
         if color_format:
-            warnings.warn("color_format is deprecated, please use color_mode instead", DeprecationWarning)
+            warnings.warn(
+                "color_format is deprecated, please use color_mode instead",
+                DeprecationWarning,
+            )
             try:
                 color_mode = ColorFormat.from_name(color_format)
             except ValueError:
@@ -253,7 +284,7 @@ class BlinkStick:
 
         color_funcs = {
             ColorFormat.RGB: self._get_color_rgb,
-            ColorFormat.HEX: self._get_color_hex
+            ColorFormat.HEX: self._get_color_hex,
         }
 
         return color_funcs.get(color_mode, ColorFormat.RGB)(index)
@@ -311,9 +342,11 @@ class BlinkStick:
 
         report_id, max_leds = self._determine_report_id(count)
 
-        device_bytes = self.backend.control_transfer(0x80 | 0x20, 0x1, report_id, 0, max_leds * 3 + 2)
+        device_bytes = self.backend.control_transfer(
+            0x80 | 0x20, 0x1, report_id, 0, max_leds * 3 + 2
+        )
 
-        return device_bytes[2: 2 + count * 3]
+        return device_bytes[2 : 2 + count * 3]
 
     def set_mode(self, mode: int) -> None:
         """
@@ -367,7 +400,6 @@ class BlinkStick:
         control_string = bytes(bytearray([0x81, count]))
 
         self.backend.control_transfer(0x20, 0x9, 0x81, 0, control_string)
-
 
     def get_led_count(self) -> int:
         """
@@ -474,7 +506,19 @@ class BlinkStick:
         """
         self.set_color()
 
-    def pulse(self, channel: int = 0, index: int = 0, red: int = 0, green: int = 0, blue: int = 0, name: str | None = None, hex: str | None = None, repeats: int = 1, duration: int = 1000, steps: int = 50) -> None:
+    def pulse(
+        self,
+        channel: int = 0,
+        index: int = 0,
+        red: int = 0,
+        green: int = 0,
+        blue: int = 0,
+        name: str | None = None,
+        hex: str | None = None,
+        repeats: int = 1,
+        duration: int = 1000,
+        steps: int = 50,
+    ) -> None:
         """
         Morph to the specified color from black and back again.
 
@@ -501,10 +545,39 @@ class BlinkStick:
         """
         self.turn_off()
         for x in range(repeats):
-            self.morph(channel=channel, index=index, red=red, green=green, blue=blue, name=name, hex=hex, duration=duration, steps=steps)
-            self.morph(channel=channel, index=index, red=0, green=0, blue=0, duration=duration, steps=steps)
+            self.morph(
+                channel=channel,
+                index=index,
+                red=red,
+                green=green,
+                blue=blue,
+                name=name,
+                hex=hex,
+                duration=duration,
+                steps=steps,
+            )
+            self.morph(
+                channel=channel,
+                index=index,
+                red=0,
+                green=0,
+                blue=0,
+                duration=duration,
+                steps=steps,
+            )
 
-    def blink(self, channel: int = 0, index: int = 0, red: int = 0, green: int = 0, blue: int = 0, name: str | None = None, hex: str | None = None, repeats: int = 1, delay: int = 500) -> None:
+    def blink(
+        self,
+        channel: int = 0,
+        index: int = 0,
+        red: int = 0,
+        green: int = 0,
+        blue: int = 0,
+        name: str | None = None,
+        hex: str | None = None,
+        repeats: int = 1,
+        delay: int = 500,
+    ) -> None:
         """
         Blink the specified color.
 
@@ -531,11 +604,30 @@ class BlinkStick:
         for x in range(repeats):
             if x:
                 time.sleep(ms_delay)
-            self.set_color(channel=channel, index=index, red=red, green=green, blue=blue, name=name, hex=hex)
+            self.set_color(
+                channel=channel,
+                index=index,
+                red=red,
+                green=green,
+                blue=blue,
+                name=name,
+                hex=hex,
+            )
             time.sleep(ms_delay)
             self.set_color(channel=channel, index=index)
 
-    def morph(self, channel: int = 0, index: int = 0, red: int = 0, green: int = 0, blue: int = 0, name: str | None = None, hex: str | None = None, duration: int = 1000, steps: int = 50) -> None:
+    def morph(
+        self,
+        channel: int = 0,
+        index: int = 0,
+        red: int = 0,
+        green: int = 0,
+        blue: int = 0,
+        name: str | None = None,
+        hex: str | None = None,
+        duration: int = 1000,
+        steps: int = 50,
+    ) -> None:
         """
         Morph to the specified color.
 
@@ -559,11 +651,17 @@ class BlinkStick:
         @param steps: Number of gradient steps (default 50)
         """
 
-        r_end, g_end, b_end = self._determine_rgb(red=red, green=green, blue=blue, name=name, hex=hex)
+        r_end, g_end, b_end = self._determine_rgb(
+            red=red, green=green, blue=blue, name=name, hex=hex
+        )
         # descale the above values
-        r_end, g_end, b_end = remap_rgb_value_reverse((r_end, g_end, b_end), self.max_rgb_value)
+        r_end, g_end, b_end = remap_rgb_value_reverse(
+            (r_end, g_end, b_end), self.max_rgb_value
+        )
 
-        r_start, g_start, b_start = remap_rgb_value_reverse(self._get_color_rgb(index), self.max_rgb_value)
+        r_start, g_start, b_start = remap_rgb_value_reverse(
+            self._get_color_rgb(index), self.max_rgb_value
+        )
 
         if r_start > 255 or g_start > 255 or b_start > 255:
             r_start = 0
@@ -583,12 +681,16 @@ class BlinkStick:
 
         ms_delay = float(duration) / float(1000 * steps)
 
-        self.set_color(channel=channel, index=index, red=r_start, green=g_start, blue=b_start)
+        self.set_color(
+            channel=channel, index=index, red=r_start, green=g_start, blue=b_start
+        )
 
         for grad in gradient:
             grad_r, grad_g, grad_b = grad
 
-            self.set_color(channel=channel, index=index, red=grad_r, green=grad_g, blue=grad_b)
+            self.set_color(
+                channel=channel, index=index, red=grad_r, green=grad_g, blue=grad_b
+            )
             time.sleep(ms_delay)
 
         self.set_color(channel=channel, index=index, red=r_end, green=g_end, blue=b_end)
@@ -675,8 +777,14 @@ class BlinkStickPro:
     data: list[list[list[int]]]
     bstick: BlinkStick | None
 
-
-    def __init__(self, r_led_count: int = 0, g_led_count: int = 0, b_led_count: int = 0, delay: float = 0.002, max_rgb_value: int = 255):
+    def __init__(
+        self,
+        r_led_count: int = 0,
+        g_led_count: int = 0,
+        b_led_count: int = 0,
+        delay: float = 0.002,
+        max_rgb_value: int = 255,
+    ):
         """
         Initialize BlinkStickPro class.
 
@@ -718,7 +826,15 @@ class BlinkStickPro:
 
         self.bstick = None
 
-    def set_color(self, channel: int, index: int, r: int, g: int, b: int, remap_values: bool = True) -> None:
+    def set_color(
+        self,
+        channel: int,
+        index: int,
+        r: int,
+        g: int,
+        b: int,
+        remap_values: bool = True,
+    ) -> None:
         """
         Set the color of a single pixel
 
@@ -822,6 +938,7 @@ class BlinkStickPro:
         if self.b_led_count > 0:
             self.send_data(2)
 
+
 class BlinkStickProMatrix(BlinkStickPro):
     """
     BlinkStickProMatrix class is specifically designed to control the individually
@@ -863,7 +980,17 @@ class BlinkStickProMatrix(BlinkStickPro):
     cols: int
     matrix_data: list[list[int]]
 
-    def __init__(self, r_columns: int = 0, r_rows: int = 0, g_columns: int = 0, g_rows: int = 0, b_columns: int = 0, b_rows: int = 0, delay: float = 0.002, max_rgb_value: int = 255):
+    def __init__(
+        self,
+        r_columns: int = 0,
+        r_rows: int = 0,
+        g_columns: int = 0,
+        g_rows: int = 0,
+        b_columns: int = 0,
+        b_rows: int = 0,
+        delay: float = 0.002,
+        max_rgb_value: int = 255,
+    ):
         """
         Initialize BlinkStickProMatrix class.
 
@@ -889,7 +1016,13 @@ class BlinkStickProMatrix(BlinkStickPro):
         self.b_columns = b_columns
         self.b_rows = b_rows
 
-        super(BlinkStickProMatrix, self).__init__(r_led_count=r_leds, g_led_count=g_leds, b_led_count=b_leds, delay=delay, max_rgb_value=max_rgb_value)
+        super(BlinkStickProMatrix, self).__init__(
+            r_led_count=r_leds,
+            g_led_count=g_leds,
+            b_led_count=b_leds,
+            delay=delay,
+            max_rgb_value=max_rgb_value,
+        )
 
         self.rows = max(r_rows, g_rows, b_rows)
         self.cols = r_columns + g_columns + b_columns
@@ -900,7 +1033,9 @@ class BlinkStickProMatrix(BlinkStickPro):
         for i in range(0, self.rows * self.cols):
             self.matrix_data.append([0, 0, 0])
 
-    def set_color(self, x: int, y: int, r: int, g: int, b: int, remap_values: bool = True) -> None:
+    def set_color(
+        self, x: int, y: int, r: int, g: int, b: int, remap_values: bool = True
+    ) -> None:
         """
         Set the color of a single pixel in the internal framebuffer.
 
@@ -1121,7 +1256,9 @@ class BlinkStickProMatrix(BlinkStickPro):
             self.set_color(x + 2, y + 1, r, g, b)
             self.set_color(x + 2, y + 3, r, g, b)
 
-    def rectangle(self, x1: int, y1: int, x2: int, y2: int, r: int, g: int, b: int) -> None:
+    def rectangle(
+        self, x1: int, y1: int, x2: int, y2: int, r: int, g: int, b: int
+    ) -> None:
         """
         Draw a rectangle with it's corners at x1:y1 and x2:y2
 
@@ -1146,7 +1283,9 @@ class BlinkStickProMatrix(BlinkStickPro):
         self.line(x2, y1, x2, y2, r, g, b)
         self.line(x1, y2, x2, y2, r, g, b)
 
-    def line(self, x1: int, y1: int, x2: int, y2: int, r: int, g: int, b: int) -> list[tuple[int, int]]:
+    def line(
+        self, x1: int, y1: int, x2: int, y2: int, r: int, g: int, b: int
+    ) -> list[tuple[int, int]]:
         """
         Draw a line from x1:y1 and x2:y2
 
@@ -1187,11 +1326,11 @@ class BlinkStickProMatrix(BlinkStickPro):
             y_step = -1
         for x in range(x1, x2 + 1):
             if is_steep:
-                #print y, "~", x
+                # print y, "~", x
                 self.set_color(y, x, r, g, b)
                 points.append((y, x))
             else:
-                #print x, " ", y
+                # print x, " ", y
                 self.set_color(x, y, r, g, b)
                 points.append((x, y))
             error -= delta_y
@@ -1238,18 +1377,21 @@ class BlinkStickProMatrix(BlinkStickPro):
 
         self.data[channel] = []
 
-        #slice the huge array to individual packets
+        # slice the huge array to individual packets
         for y in range(0, self.rows):
             start = y * self.cols + start_col
             end = y * self.cols + end_col
 
-            self.data[channel].extend(self.matrix_data[start: end])
+            self.data[channel].extend(self.matrix_data[start:end])
 
         super(BlinkStickProMatrix, self).send_data(channel)
 
+
 def _find_blicksticks(find_all: bool = True) -> list[BlinkStick] | None:
     if sys.platform == "win32":
-        devices = hid.HidDeviceFilter(vendor_id =VENDOR_ID, product_id =PRODUCT_ID).get_devices()
+        devices = hid.HidDeviceFilter(
+            vendor_id=VENDOR_ID, product_id=PRODUCT_ID
+        ).get_devices()
         if find_all:
             return devices
         elif len(devices) > 0:
@@ -1258,7 +1400,9 @@ def _find_blicksticks(find_all: bool = True) -> list[BlinkStick] | None:
             return None
 
     else:
-        return usb.core.find(find_all=find_all, idVendor=VENDOR_ID, idProduct=PRODUCT_ID)
+        return usb.core.find(
+            find_all=find_all, idVendor=VENDOR_ID, idProduct=PRODUCT_ID
+        )
 
 
 def find_all() -> list[BlinkStick]:

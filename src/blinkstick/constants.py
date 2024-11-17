@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from enum import Enum
 
-VENDOR_ID = 0x20a0
-PRODUCT_ID = 0x41e5
+VENDOR_ID = 0x20A0
+PRODUCT_ID = 0x41E5
+
 
 class BlinkStickVariant(Enum):
     UNKNOWN = (0, "Unknown")
@@ -23,7 +24,9 @@ class BlinkStickVariant(Enum):
         return self._value_[1]
 
     @staticmethod
-    def identify(major_version: int, version_attribute: int | None) -> "BlinkStickVariant":
+    def identify(
+        major_version: int, version_attribute: int | None
+    ) -> "BlinkStickVariant":
         if major_version == 1:
             return BlinkStickVariant.BLINKSTICK
         elif major_version == 2:

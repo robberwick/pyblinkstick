@@ -25,7 +25,14 @@ class BaseBackend(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def control_transfer(self, bmRequestType: int, bRequest: int, wValue: int, wIndex: int, data_or_wLength: bytes | int):
+    def control_transfer(
+        self,
+        bmRequestType: int,
+        bRequest: int,
+        wValue: int,
+        wIndex: int,
+        data_or_wLength: bytes | int,
+    ):
         raise NotImplementedError
 
     @abstractmethod

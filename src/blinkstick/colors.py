@@ -1,7 +1,8 @@
 import re
 from enum import Enum, auto
 
-HEX_COLOR_RE = re.compile(r'^#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})$')
+HEX_COLOR_RE = re.compile(r"^#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})$")
+
 
 class Color(Enum):
     ALICEBLUE = "#f0f8ff"
@@ -230,8 +231,8 @@ def normalize_hex(hex_value: str) -> str:
     except AttributeError:
         raise ValueError("'%s' is not a valid hexadecimal color value." % hex_value)
     if len(hex_digits) == 3:
-        hex_digits = ''.join([2 * s for s in hex_digits])
-    return '#%s' % hex_digits.lower()
+        hex_digits = "".join([2 * s for s in hex_digits])
+    return "#%s" % hex_digits.lower()
 
 
 def hex_to_rgb(hex_value: str) -> tuple[int, int, int]:
@@ -275,7 +276,9 @@ def name_to_rgb(name: str) -> tuple[int, int, int]:
     return hex_to_rgb(name_to_hex(name))
 
 
-def remap(value: int, left_min: int, left_max: int, right_min: int, right_max: int) -> int:
+def remap(
+    value: int, left_min: int, left_max: int, right_min: int, right_max: int
+) -> int:
     """
     Remap a value from one range to another.
     """
@@ -296,17 +299,25 @@ def remap_color(value: int, max_value: int) -> int:
     return remap(value, 0, 255, 0, max_value)
 
 
-def remap_color_reverse(value: int, max_value : int) -> int:
+def remap_color_reverse(value: int, max_value: int) -> int:
     return remap(value, 0, max_value, 0, 255)
 
 
-def remap_rgb_value(rgb_val: tuple[int, int, int], max_value: int) -> tuple[int, int, int]:
-    return (remap_color(rgb_val[0], max_value),
-            remap_color(rgb_val[1], max_value),
-            remap_color(rgb_val[2], max_value))
+def remap_rgb_value(
+    rgb_val: tuple[int, int, int], max_value: int
+) -> tuple[int, int, int]:
+    return (
+        remap_color(rgb_val[0], max_value),
+        remap_color(rgb_val[1], max_value),
+        remap_color(rgb_val[2], max_value),
+    )
 
 
-def remap_rgb_value_reverse(rgb_val: tuple[int, int, int], max_value: int) -> tuple[int, int, int]:
-    return (remap_color_reverse(rgb_val[0], max_value),
-            remap_color_reverse(rgb_val[1], max_value),
-            remap_color_reverse(rgb_val[2], max_value))
+def remap_rgb_value_reverse(
+    rgb_val: tuple[int, int, int], max_value: int
+) -> tuple[int, int, int]:
+    return (
+        remap_color_reverse(rgb_val[0], max_value),
+        remap_color_reverse(rgb_val[1], max_value),
+        remap_color_reverse(rgb_val[2], max_value),
+    )

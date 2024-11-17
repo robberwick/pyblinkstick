@@ -12,4 +12,5 @@ def make_blinkstick() -> Callable[[], BlinkStick]:
         bs = BlinkStick()
         bs.backend = MagicMock()
         return bs
+
     return _make_blinkstick
