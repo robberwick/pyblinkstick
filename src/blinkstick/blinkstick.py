@@ -730,7 +730,7 @@ class BlinkStick:
         @param value: True/False to set the inverse mode
         """
         if type(value) is str:
-            value = value.lower() == "true"
+            value = value.lower() == "true"  # type: ignore
         self.inverse = bool(value)
 
     def set_max_rgb_value(self, value: int) -> None:
