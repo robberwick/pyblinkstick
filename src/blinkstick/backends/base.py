@@ -2,8 +2,12 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
+from typing import TypeVar, Generic
 
-class BaseBackend(ABC):
+T = TypeVar("T")
+
+
+class BaseBackend(ABC, Generic[T]):
 
     serial: str | None
 
@@ -16,12 +20,12 @@ class BaseBackend(ABC):
 
     @staticmethod
     @abstractmethod
-    def find_blinksticks(find_all: bool = True):
+    def find_blinksticks(find_all: bool = True) -> list[T] | None:
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def find_by_serial(serial: str) -> BaseBackend | None:
+    def find_by_serial(serial: str) -> list[T] | None:
         raise NotImplementedError
 
     @abstractmethod
