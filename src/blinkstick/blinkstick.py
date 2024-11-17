@@ -16,6 +16,7 @@ from blinkstick.colors import (
 )
 from blinkstick.constants import VENDOR_ID, PRODUCT_ID, BlinkStickVariant
 from blinkstick.exceptions import BlinkStickException
+from blinkstick.utilities import string_to_info_block_data
 
 if sys.platform == "win32":
     from blinkstick.backends.win32 import Win32Backend as USBBackend
@@ -454,25 +455,6 @@ class BlinkStick:
             result += chr(i)
         return result
 
-    def _data_to_message(self, data: str) -> bytes:
-        """
-        Helper method to convert a string to byte array of 32 bytes.
-
-        @type  data: str
-        @param data: The data to convert to byte array
-
-        @rtype: byte[32]
-        @return: It fills the rest of bytes with zeros.
-        """
-        byte_array = bytearray([1])
-        for c in data:
-            byte_array.append(ord(c))
-
-        for i in range(32 - len(data)):
-            byte_array.append(0)
-
-        return bytes(byte_array)
-
     def set_info_block1(self, data: str) -> None:
         """
         Sets the infoblock1 with specified string.
@@ -482,7 +464,9 @@ class BlinkStick:
         @type  data: str
         @param data: InfoBlock1 for the backend to set
         """
-        self.backend.control_transfer(0x20, 0x9, 0x0002, 0, self._data_to_message(data))
+        self.backend.control_transfer(
+            0x20, 0x9, 0x0002, 0, string_to_info_block_data(data)
+        )
 
     def set_info_block2(self, data: str) -> None:
         """
@@ -493,7 +477,9 @@ class BlinkStick:
         @type  data: str
         @param data: InfoBlock2 for the backend to set
         """
-        self.backend.control_transfer(0x20, 0x9, 0x0003, 0, self._data_to_message(data))
+        self.backend.control_transfer(
+            0x20, 0x9, 0x0003, 0, string_to_info_block_data(data)
+        )
 
     def set_random_color(self) -> None:
         """
