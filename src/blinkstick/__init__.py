@@ -1,7 +1,12 @@
 from importlib.metadata import version, PackageNotFoundError
 
 from .blinkstick import BlinkStick, BlinkStickPro, BlinkStickProMatrix
-from .blinkstick import find_all, find_by_serial, find_first, get_blinkstick_package_version
+from .blinkstick import (
+    find_all,
+    find_by_serial,
+    find_first,
+    get_blinkstick_package_version,
+)
 from .colors import Color, ColorFormat
 from .constants import BlinkStickVariant
 from .exceptions import BlinkStickException

@@ -17,16 +17,16 @@ class Win32Backend(BaseBackend):
         if device:
             self.device.open()
             self.reports = self.device.find_feature_reports()
-            self.serial =  self.get_serial()
+            self.serial = self.get_serial()
 
     @staticmethod
     def find_by_serial(serial: str) -> list | None:
-        devices = [d for d in Win32Backend.find_blinksticks()
-                   if d.serial_number == serial]
+        devices = [
+            d for d in Win32Backend.find_blinksticks() if d.serial_number == serial
+        ]
 
         if len(devices) > 0:
             return devices
-
 
     def _refresh_device(self):
         # TODO This is weird semantics. fix up return values to be more sensible
@@ -40,7 +40,9 @@ class Win32Backend(BaseBackend):
 
     @staticmethod
     def find_blinksticks(find_all: bool = True):
-        devices = hid.HidDeviceFilter(vendor_id =VENDOR_ID, product_id =PRODUCT_ID).get_devices()
+        devices = hid.HidDeviceFilter(
+            vendor_id=VENDOR_ID, product_id=PRODUCT_ID
+        ).get_devices()
         if find_all:
             return devices
         elif len(devices) > 0:
@@ -48,19 +50,28 @@ class Win32Backend(BaseBackend):
         else:
             return None
 
-
-    def control_transfer(self, bmRequestType, bRequest, wValue, wIndex, data_or_wLength):
+    def control_transfer(
+        self, bmRequestType, bRequest, wValue, wIndex, data_or_wLength
+    ):
         if bmRequestType == 0x20:
             if sys.version_info[0] < 3:
-                data = (c_ubyte * len(data_or_wLength))(*[c_ubyte(ord(c)) for c in data_or_wLength])
+                data = (c_ubyte * len(data_or_wLength))(
+                    *[c_ubyte(ord(c)) for c in data_or_wLength]
+                )
             else:
-                data = (c_ubyte * len(data_or_wLength))(*[c_ubyte(c) for c in data_or_wLength])
+                data = (c_ubyte * len(data_or_wLength))(
+                    *[c_ubyte(c) for c in data_or_wLength]
+                )
             data[0] = wValue
             if not self.device.send_feature_report(data):
                 if self._refresh_device():
                     self.device.send_feature_report(data)
                 else:
-                    raise BlinkStickException("Could not communicate with BlinkStick {0} - it may have been removed".format(self.serial))
+                    raise BlinkStickException(
+                        "Could not communicate with BlinkStick {0} - it may have been removed".format(
+                            self.serial
+                        )
+                    )
 
         elif bmRequestType == 0x80 | 0x20:
             return self.reports[wValue - 1].get()
