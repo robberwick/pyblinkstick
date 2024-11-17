@@ -687,7 +687,7 @@ class BlinkStick:
         )
 
         for grad in gradient:
-            grad_r, grad_g, grad_b = grad
+            grad_r, grad_g, grad_b = map(int, grad)
 
             self.set_color(
                 channel=channel, index=index, red=grad_r, green=grad_g, blue=grad_b
