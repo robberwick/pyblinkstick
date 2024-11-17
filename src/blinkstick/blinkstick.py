@@ -242,7 +242,7 @@ class BlinkStick:
         self,
         index: int = 0,
         color_mode: ColorFormat = ColorFormat.RGB,
-        color_format: str = None,
+        color_format: str | None = None,
     ) -> tuple[int, int, int] | str:
         """
         Get the current backend color in the defined format.
