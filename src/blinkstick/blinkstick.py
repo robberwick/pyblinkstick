@@ -18,11 +18,11 @@ from blinkstick.exceptions import BlinkStickException
 
 if sys.platform == "win32":
     from blinkstick.backends.win32 import Win32Backend as USBBackend
-    import pywinusb.hid as hid
+    import pywinusb.hid as hid  # type: ignore
 else:
     from blinkstick.backends.unix_like import UnixLikeBackend as USBBackend
-    import usb.core
-    import usb.util
+    import usb.core  # type: ignore
+    import usb.util  # type: ignore
 
 from random import randint
 
