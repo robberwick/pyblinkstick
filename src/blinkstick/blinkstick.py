@@ -222,13 +222,13 @@ class BlinkStick:
                 0x80 | 0x20, 0x1, 0x0001, 0, 33
             )
             if self.inverse:
-                return [
+                return (
                     255 - device_bytes[1],
                     255 - device_bytes[2],
                     255 - device_bytes[3],
-                ]
+                )
             else:
-                return [device_bytes[1], device_bytes[2], device_bytes[3]]
+                return (device_bytes[1], device_bytes[2], device_bytes[3])
         else:
             data = self.get_led_data((index + 1) * 3)
 
