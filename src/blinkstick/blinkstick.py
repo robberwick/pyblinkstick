@@ -1439,7 +1439,8 @@ def find_first() -> BlinkStick | None:
 
     return None
 
-def find_by_serial(serial: str | None = None) -> BlinkStick | None:
+
+def find_by_serial(serial: str = "") -> BlinkStick | None:
     """
     Find BlinkStick backend based on serial number.
 
