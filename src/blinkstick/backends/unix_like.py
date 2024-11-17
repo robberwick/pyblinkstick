@@ -1,16 +1,17 @@
 from __future__ import annotations
 
-import usb.core
-import usb.util
+import usb.core  # type: ignore
+import usb.util  # type: ignore
 
 from blinkstick.constants import VENDOR_ID, PRODUCT_ID
 from blinkstick.backends.base import BaseBackend
 from blinkstick.exceptions import BlinkStickException
 
 
-class UnixLikeBackend(BaseBackend):
+class UnixLikeBackend(BaseBackend[usb.core.Device]):
 
     serial: str
+    device: usb.core.Device
 
     def __init__(self, device=None):
         self.device = device
@@ -38,13 +39,13 @@ class UnixLikeBackend(BaseBackend):
             return True
 
     @staticmethod
-    def find_blinksticks(find_all: bool = True):
+    def find_blinksticks(find_all: bool = True) -> list[usb.core.Device] | None:
         return usb.core.find(
             find_all=find_all, idVendor=VENDOR_ID, idProduct=PRODUCT_ID
         )
 
     @staticmethod
-    def find_by_serial(serial: str) -> list | None:
+    def find_by_serial(serial: str) -> list[usb.core.Device] | None:
         for d in UnixLikeBackend.find_blinksticks():
             try:
                 if usb.util.get_string(d, 3, 1033) == serial:
@@ -52,6 +53,8 @@ class UnixLikeBackend(BaseBackend):
                     return devices
             except Exception as e:
                 print("{0}".format(e))
+
+        return None
 
     def control_transfer(
         self,

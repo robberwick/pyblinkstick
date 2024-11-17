@@ -3,14 +3,18 @@ from __future__ import annotations
 import sys
 from ctypes import *
 
-from pywinusb import hid
+from pywinusb import hid  # type: ignore
 
 from blinkstick.constants import VENDOR_ID, PRODUCT_ID
 from blinkstick.backends.base import BaseBackend
 from blinkstick.exceptions import BlinkStickException
 
 
-class Win32Backend(BaseBackend):
+class Win32Backend(BaseBackend[hid.HidDevice]):
+    serial: str
+    device: hid.HidDevice
+    reports: list[hid.core.HidReport]
+
     def __init__(self, device=None):
         super().__init__()
         self.device = device
@@ -20,13 +24,15 @@ class Win32Backend(BaseBackend):
             self.serial = self.get_serial()
 
     @staticmethod
-    def find_by_serial(serial: str) -> list | None:
+    def find_by_serial(serial: str) -> list[hid.HidDevice] | None:
         devices = [
             d for d in Win32Backend.find_blinksticks() if d.serial_number == serial
         ]
 
         if len(devices) > 0:
             return devices
+
+        return None
 
     def _refresh_device(self):
         # TODO This is weird semantics. fix up return values to be more sensible
@@ -39,7 +45,7 @@ class Win32Backend(BaseBackend):
             return True
 
     @staticmethod
-    def find_blinksticks(find_all: bool = True):
+    def find_blinksticks(find_all: bool = True) -> list[hid.HidDevice] | None:
         devices = hid.HidDeviceFilter(
             vendor_id=VENDOR_ID, product_id=PRODUCT_ID
         ).get_devices()
