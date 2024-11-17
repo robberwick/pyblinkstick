@@ -918,6 +918,9 @@ class BlinkStickPro:
             - 1 - G pin on BlinkStick Pro board
             - 2 - B pin on BlinkStick Pro board
         """
+        if self.bstick is None:
+            return
+
         packet_data = [item for sublist in self.data[channel] for item in sublist]
 
         try:
