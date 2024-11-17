@@ -4,6 +4,7 @@ import sys
 import time
 import warnings
 from importlib.metadata import version
+from typing import Callable
 
 from blinkstick.colors import (
     hex_to_rgb,
@@ -282,7 +283,7 @@ class BlinkStick:
             except ValueError:
                 color_mode = ColorFormat.RGB
 
-        color_funcs = {
+        color_funcs: dict[ColorFormat, Callable[[int], tuple[int, int, int] | str]] = {
             ColorFormat.RGB: self._get_color_rgb,
             ColorFormat.HEX: self._get_color_hex,
         }
