@@ -4,6 +4,7 @@ import sys
 import time
 import warnings
 from importlib.metadata import version
+from typing import Callable
 
 from blinkstick.colors import (
     hex_to_rgb,
@@ -18,11 +19,11 @@ from blinkstick.exceptions import BlinkStickException
 
 if sys.platform == "win32":
     from blinkstick.backends.win32 import Win32Backend as USBBackend
-    import pywinusb.hid as hid
+    import pywinusb.hid as hid  # type: ignore
 else:
     from blinkstick.backends.unix_like import UnixLikeBackend as USBBackend
-    import usb.core
-    import usb.util
+    import usb.core  # type: ignore
+    import usb.util  # type: ignore
 
 from random import randint
 
@@ -222,13 +223,13 @@ class BlinkStick:
                 0x80 | 0x20, 0x1, 0x0001, 0, 33
             )
             if self.inverse:
-                return [
+                return (
                     255 - device_bytes[1],
                     255 - device_bytes[2],
                     255 - device_bytes[3],
-                ]
+                )
             else:
-                return [device_bytes[1], device_bytes[2], device_bytes[3]]
+                return device_bytes[1], device_bytes[2], device_bytes[3]
         else:
             data = self.get_led_data((index + 1) * 3)
 
@@ -242,7 +243,7 @@ class BlinkStick:
         self,
         index: int = 0,
         color_mode: ColorFormat = ColorFormat.RGB,
-        color_format: str = None,
+        color_format: str | None = None,
     ) -> tuple[int, int, int] | str:
         """
         Get the current backend color in the defined format.
@@ -282,12 +283,12 @@ class BlinkStick:
             except ValueError:
                 color_mode = ColorFormat.RGB
 
-        color_funcs = {
+        color_funcs: dict[ColorFormat, Callable[[int], tuple[int, int, int] | str]] = {
             ColorFormat.RGB: self._get_color_rgb,
             ColorFormat.HEX: self._get_color_hex,
         }
 
-        return color_funcs.get(color_mode, ColorFormat.RGB)(index)
+        return color_funcs.get(color_mode, self._get_color_rgb)(index)
 
     def _determine_report_id(self, led_count: int) -> tuple[int, int]:
         report_id = 9
@@ -453,7 +454,7 @@ class BlinkStick:
             result += chr(i)
         return result
 
-    def _data_to_message(self, data) -> bytes:
+    def _data_to_message(self, data: str) -> bytes:
         """
         Helper method to convert a string to byte array of 32 bytes.
 
@@ -463,14 +464,14 @@ class BlinkStick:
         @rtype: byte[32]
         @return: It fills the rest of bytes with zeros.
         """
-        bytes = [1]
+        byte_array = bytearray([1])
         for c in data:
-            bytes.append(ord(c))
+            byte_array.append(ord(c))
 
         for i in range(32 - len(data)):
-            bytes.append(0)
+            byte_array.append(0)
 
-        return bytes
+        return bytes(byte_array)
 
     def set_info_block1(self, data: str) -> None:
         """
@@ -686,7 +687,7 @@ class BlinkStick:
         )
 
         for grad in gradient:
-            grad_r, grad_g, grad_b = grad
+            grad_r, grad_g, grad_b = map(int, grad)
 
             self.set_color(
                 channel=channel, index=index, red=grad_r, green=grad_g, blue=grad_b
@@ -729,7 +730,7 @@ class BlinkStick:
         @param value: True/False to set the inverse mode
         """
         if type(value) is str:
-            value = value.lower() == "true"
+            value = value.lower() == "true"  # type: ignore
         self.inverse = bool(value)
 
     def set_max_rgb_value(self, value: int) -> None:
@@ -917,6 +918,9 @@ class BlinkStickPro:
             - 1 - G pin on BlinkStick Pro board
             - 2 - B pin on BlinkStick Pro board
         """
+        if self.bstick is None:
+            return
+
         packet_data = [item for sublist in self.data[channel] for item in sublist]
 
         try:
@@ -1433,8 +1437,10 @@ def find_first() -> BlinkStick | None:
     if d:
         return BlinkStick(device=d)
 
+    return None
 
-def find_by_serial(serial: str | None = None) -> BlinkStick | None:
+
+def find_by_serial(serial: str = "") -> BlinkStick | None:
     """
     Find BlinkStick backend based on serial number.
 
@@ -1446,6 +1452,8 @@ def find_by_serial(serial: str | None = None) -> BlinkStick | None:
 
     if devices:
         return BlinkStick(device=devices[0])
+
+    return None
 
 
 def get_blinkstick_package_version() -> str:

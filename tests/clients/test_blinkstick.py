@@ -242,7 +242,7 @@ def test_set_inverse_type_checking(make_blinkstick, input_value, expected_result
             (0, 255, 0, 0),
             (255, 0, 0),
             False,
-            [255, 0, 0],
+            (255, 0, 0),
             id="RGB, NoInverse",
         ),
         pytest.param(
@@ -258,7 +258,7 @@ def test_set_inverse_type_checking(make_blinkstick, input_value, expected_result
             (0, 255, 0, 0),
             (255, 0, 0),
             True,
-            [0, 255, 255],
+            (0, 255, 255),
             id="RGB, Inverse",
         ),
         pytest.param(
