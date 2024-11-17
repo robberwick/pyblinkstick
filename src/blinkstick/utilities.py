@@ -8,11 +8,10 @@ def string_to_info_block_data(data: str) -> bytes:
     @rtype: byte[32]
     @return: It fills the rest of bytes with zeros.
     """
-    byte_array = bytearray([1])
-    for c in data:
-        byte_array.append(ord(c))
+    info_block_data = data[:31]
+    byte_array = bytearray([1] + [0] * 31)
 
-    for i in range(32 - len(data)):
-        byte_array.append(0)
+    for i, c in enumerate(info_block_data):
+        byte_array[i + 1] = ord(c)
 
     return bytes(byte_array)
