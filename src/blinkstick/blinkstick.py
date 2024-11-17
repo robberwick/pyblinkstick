@@ -287,7 +287,7 @@ class BlinkStick:
             ColorFormat.HEX: self._get_color_hex,
         }
 
-        return color_funcs.get(color_mode, ColorFormat.RGB)(index)
+        return color_funcs.get(color_mode, self._get_color_rgb)(index)
 
     def _determine_report_id(self, led_count: int) -> tuple[int, int]:
         report_id = 9
