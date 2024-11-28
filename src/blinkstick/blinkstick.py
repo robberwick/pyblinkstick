@@ -1380,24 +1380,6 @@ class BlinkStickProMatrix(BlinkStickPro):
         super(BlinkStickProMatrix, self).send_data(channel)
 
 
-def _find_blicksticks(find_all: bool = True) -> list[BlinkStick] | None:
-    if sys.platform == "win32":
-        devices = hid.HidDeviceFilter(
-            vendor_id=VENDOR_ID, product_id=PRODUCT_ID
-        ).get_devices()
-        if find_all:
-            return devices
-        elif len(devices) > 0:
-            return devices[0]
-        else:
-            return None
-
-    else:
-        return usb.core.find(
-            find_all=find_all, idVendor=VENDOR_ID, idProduct=PRODUCT_ID
-        )
-
-
 def find_all() -> list[BlinkStick]:
     """
     Find all attached BlinkStick devices.
