@@ -1,4 +1,4 @@
-from blinkstick import blinkstick
+from blinkstick.clients import blinkstick
 from blinkstick.exceptions import BlinkStickException
 
 bs = blinkstick.find_first()

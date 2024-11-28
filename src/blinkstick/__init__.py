@@ -1,7 +1,7 @@
 from importlib.metadata import version, PackageNotFoundError
 
-from .blinkstick import BlinkStick, BlinkStickPro, BlinkStickProMatrix
-from .blinkstick import (
+from blinkstick.clients.blinkstick import BlinkStick, BlinkStickPro, BlinkStickProMatrix
+from blinkstick.clients.blinkstick import (
     find_all,
     find_by_serial,
     find_first,
