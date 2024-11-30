@@ -25,7 +25,7 @@ class Win32Backend(BaseBackend[hid.HidDevice]):
 
     @staticmethod
     def find_by_serial(serial: str) -> list[hid.HidDevice] | None:
-        found_devices = Win32Backend.find_blinksticks() or []
+        found_devices = Win32Backend.get_attached_blinkstick_devices() or []
         devices = [d for d in found_devices if d.serial_number == serial]
 
         if len(devices) > 0:
@@ -33,7 +33,7 @@ class Win32Backend(BaseBackend[hid.HidDevice]):
 
         return None
 
-    def _refresh_device(self):
+    def _refresh_attached_blinkstick_device(self):
         # TODO This is weird semantics. fix up return values to be more sensible
         if not self.serial:
             return False
@@ -44,7 +44,9 @@ class Win32Backend(BaseBackend[hid.HidDevice]):
             return True
 
     @staticmethod
-    def find_blinksticks(find_all: bool = True) -> list[hid.HidDevice] | None:
+    def get_attached_blinkstick_devices(
+        find_all: bool = True,
+    ) -> list[hid.HidDevice] | None:
         devices = hid.HidDeviceFilter(
             vendor_id=VENDOR_ID, product_id=PRODUCT_ID
         ).get_devices()
@@ -69,7 +71,7 @@ class Win32Backend(BaseBackend[hid.HidDevice]):
                 )
             data[0] = wValue
             if not self.device.send_feature_report(data):
-                if self._refresh_device():
+                if self._refresh_attached_blinkstick_device():
                     self.device.send_feature_report(data)
                 else:
                     raise BlinkStickException(

@@ -1403,7 +1403,7 @@ def find_all() -> list[BlinkStick]:
     @return: a list of BlinkStick objects or None if no devices found
     """
     result: list[BlinkStick] = []
-    if (found_devices := USBBackend.find_blinksticks()) is None:
+    if (found_devices := USBBackend.get_attached_blinkstick_devices()) is None:
         return result
     for d in found_devices:
         result.extend([BlinkStick(device=d)])
@@ -1418,7 +1418,7 @@ def find_first() -> BlinkStick | None:
     @rtype: BlinkStick
     @return: BlinkStick object or None if no devices are found
     """
-    d = USBBackend.find_blinksticks(find_all=False)
+    d = USBBackend.get_attached_blinkstick_devices(find_all=False)
 
     if d:
         return BlinkStick(device=d)

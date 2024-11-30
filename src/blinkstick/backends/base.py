@@ -15,12 +15,12 @@ class BaseBackend(ABC, Generic[T]):
         self.serial = None
 
     @abstractmethod
-    def _refresh_device(self):
+    def _refresh_attached_blinkstick_device(self):
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def find_blinksticks(find_all: bool = True) -> list[T] | None:
+    def get_attached_blinkstick_devices(find_all: bool = True) -> list[T] | None:
         raise NotImplementedError
 
     @staticmethod

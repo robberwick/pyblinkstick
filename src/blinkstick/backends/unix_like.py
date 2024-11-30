@@ -30,7 +30,7 @@ class UnixLikeBackend(BaseBackend[usb.core.Device]):
             except usb.core.USBError as e:
                 raise BlinkStickException("Could not detach kernel driver: %s" % str(e))
 
-    def _refresh_device(self):
+    def _refresh_attached_blinkstick_device(self):
         if not self.serial:
             return False
         if devices := self.find_by_serial(self.serial):
@@ -39,14 +39,16 @@ class UnixLikeBackend(BaseBackend[usb.core.Device]):
             return True
 
     @staticmethod
-    def find_blinksticks(find_all: bool = True) -> list[usb.core.Device] | None:
+    def get_attached_blinkstick_devices(
+        find_all: bool = True,
+    ) -> list[usb.core.Device] | None:
         return usb.core.find(
             find_all=find_all, idVendor=VENDOR_ID, idProduct=PRODUCT_ID
         )
 
     @staticmethod
     def find_by_serial(serial: str) -> list[usb.core.Device] | None:
-        found_devices = UnixLikeBackend.find_blinksticks() or []
+        found_devices = UnixLikeBackend.get_attached_blinkstick_devices() or []
         for d in found_devices:
             try:
                 if usb.util.get_string(d, 3, 1033) == serial:
@@ -73,7 +75,7 @@ class UnixLikeBackend(BaseBackend[usb.core.Device]):
             # Could not communicate with BlinkStick backend
             # attempt to find it again based on serial
 
-            if self._refresh_device():
+            if self._refresh_attached_blinkstick_device():
                 return self.device.ctrl_transfer(
                     bmRequestType, bRequest, wValue, wIndex, data_or_wLength
                 )
@@ -103,7 +105,7 @@ class UnixLikeBackend(BaseBackend[usb.core.Device]):
             # Could not communicate with BlinkStick backend
             # attempt to find it again based on serial
 
-            if self._refresh_device():
+            if self._refresh_attached_blinkstick_device():
                 return str(usb.util.get_string(self.device, index, 1033))
             else:
                 raise BlinkStickException(
