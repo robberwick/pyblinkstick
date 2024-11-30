@@ -13,7 +13,7 @@ from blinkstick.colors import (
     ColorFormat,
 )
 from blinkstick.constants import BlinkStickVariant
-from blinkstick.devices.device import BlinkStickDevice
+from blinkstick.devices import BlinkStickDevice
 from blinkstick.exceptions import BlinkStickException
 from blinkstick.utilities import string_to_info_block_data
 
