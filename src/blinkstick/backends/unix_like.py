@@ -49,10 +49,6 @@ class UnixLikeBackend(BaseBackend[usb.core.Device]):
         )
         return [
             # TODO: refactor this to DRY up the usb.util.get_string calls
-            # note that we can't use _usb_get_string here because we're not in an instance method
-            # and we don't have a BlinkStickDevice instance to call it on
-            # until then we'll just have to live with the duplication, and the fact that we're not able
-            # to handle USB errors in the same way as we do in the instance methods
             BlinkStickDevice(
                 raw_device=device,
                 serial=str(usb.util.get_string(device, 3, 1033)),
@@ -91,26 +87,6 @@ class UnixLikeBackend(BaseBackend[usb.core.Device]):
             if self._refresh_attached_blinkstick_device():
                 return self.blinkstick_device.raw_device.ctrl_transfer(
                     bmRequestType, bRequest, wValue, wIndex, data_or_wLength
-                )
-            else:
-                raise BlinkStickException(
-                    "Could not communicate with BlinkStick {0} - it may have been removed".format(
-                        self.serial
-                    )
-                )
-
-    def _usb_get_string(self, index: int) -> str:
-        try:
-            return str(
-                usb.util.get_string(self.blinkstick_device.raw_device, index, 1033)
-            )
-        except usb.USBError:
-            # Could not communicate with BlinkStick backend
-            # attempt to find it again based on serial
-
-            if self._refresh_attached_blinkstick_device():
-                return str(
-                    usb.util.get_string(self.blinkstick_device.raw_device, index, 1033)
                 )
             else:
                 raise BlinkStickException(
