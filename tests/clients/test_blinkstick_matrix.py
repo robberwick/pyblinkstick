@@ -1,4 +1,4 @@
-from blinkstick.clients.blinkstick import BlinkStickProMatrix
+from blinkstick.clients import BlinkStickProMatrix
 
 
 def test_instantiate():
