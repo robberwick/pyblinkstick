@@ -5,55 +5,66 @@ import usb.util  # type: ignore
 
 from blinkstick.constants import VENDOR_ID, PRODUCT_ID
 from blinkstick.backends.base import BaseBackend
+from blinkstick.devices.device import BlinkStickDevice
 from blinkstick.exceptions import BlinkStickException
 
 
 class UnixLikeBackend(BaseBackend[usb.core.Device]):
 
     serial: str
-    device: usb.core.Device
+    blinkstick_device: BlinkStickDevice[usb.core.Device]
 
     def __init__(self, device=None):
-        self.device = device
+        self.blinkstick_device = device
         super().__init__()
         if device:
             self.open_device()
             self.serial = self.get_serial()
 
     def open_device(self) -> None:
-        if self.device is None:
+        if self.blinkstick_device is None:
             raise BlinkStickException("Could not find BlinkStick...")
 
-        if self.device.is_kernel_driver_active(0):
+        if self.blinkstick_device.raw_device.is_kernel_driver_active(0):
             try:
-                self.device.detach_kernel_driver(0)
+                self.blinkstick_device.raw_device.detach_kernel_driver(0)
             except usb.core.USBError as e:
                 raise BlinkStickException("Could not detach kernel driver: %s" % str(e))
 
-    def _refresh_device(self):
-        if not self.serial:
+    def _refresh_attached_blinkstick_device(self):
+        if not self.blinkstick_device:
             return False
-        if devices := self.find_by_serial(self.serial):
-            self.device = devices[0]
+        if devices := self.find_by_serial(self.blinkstick_device.serial):
+            self.blinkstick_device = devices[0]
             self.open_device()
             return True
 
     @staticmethod
-    def find_blinksticks(find_all: bool = True) -> list[usb.core.Device] | None:
-        return usb.core.find(
-            find_all=find_all, idVendor=VENDOR_ID, idProduct=PRODUCT_ID
+    def get_attached_blinkstick_devices(
+        find_all: bool = True,
+    ) -> list[BlinkStickDevice[usb.core.Device]]:
+        raw_devices = (
+            usb.core.find(find_all=find_all, idVendor=VENDOR_ID, idProduct=PRODUCT_ID)
+            or []
         )
+        return [
+            # TODO: refactor this to DRY up the usb.util.get_string calls
+            BlinkStickDevice(
+                raw_device=device,
+                serial=str(usb.util.get_string(device, 3, 1033)),
+                manufacturer=str(usb.util.get_string(device, 1, 1033)),
+                version_attribute=device.bcdDevice,
+                description=str(usb.util.get_string(device, 2, 1033)),
+            )
+            for device in raw_devices
+        ]
 
     @staticmethod
-    def find_by_serial(serial: str) -> list[usb.core.Device] | None:
-        found_devices = UnixLikeBackend.find_blinksticks() or []
+    def find_by_serial(serial: str) -> list[BlinkStickDevice[usb.core.Device]] | None:
+        found_devices = UnixLikeBackend.get_attached_blinkstick_devices()
         for d in found_devices:
-            try:
-                if usb.util.get_string(d, 3, 1033) == serial:
-                    devices = [d]
-                    return devices
-            except Exception as e:
-                print("{0}".format(e))
+            if d.serial == serial:
+                return [d]
 
         return None
 
@@ -66,45 +77,17 @@ class UnixLikeBackend(BaseBackend[usb.core.Device]):
         data_or_wLength: bytes | int,
     ):
         try:
-            return self.device.ctrl_transfer(
+            return self.blinkstick_device.raw_device.ctrl_transfer(
                 bmRequestType, bRequest, wValue, wIndex, data_or_wLength
             )
         except usb.USBError:
             # Could not communicate with BlinkStick backend
             # attempt to find it again based on serial
 
-            if self._refresh_device():
-                return self.device.ctrl_transfer(
+            if self._refresh_attached_blinkstick_device():
+                return self.blinkstick_device.raw_device.ctrl_transfer(
                     bmRequestType, bRequest, wValue, wIndex, data_or_wLength
                 )
-            else:
-                raise BlinkStickException(
-                    "Could not communicate with BlinkStick {0} - it may have been removed".format(
-                        self.serial
-                    )
-                )
-
-    def get_serial(self) -> str:
-        return self._usb_get_string(3)
-
-    def get_manufacturer(self) -> str:
-        return self._usb_get_string(1)
-
-    def get_version_attribute(self) -> int:
-        return int(self.device.bcdDevice)
-
-    def get_description(self):
-        return self._usb_get_string(2)
-
-    def _usb_get_string(self, index: int) -> str:
-        try:
-            return str(usb.util.get_string(self.device, index, 1033))
-        except usb.USBError:
-            # Could not communicate with BlinkStick backend
-            # attempt to find it again based on serial
-
-            if self._refresh_device():
-                return str(usb.util.get_string(self.device, index, 1033))
             else:
                 raise BlinkStickException(
                     "Could not communicate with BlinkStick {0} - it may have been removed".format(

@@ -7,53 +7,64 @@ from pywinusb import hid  # type: ignore
 
 from blinkstick.constants import VENDOR_ID, PRODUCT_ID
 from blinkstick.backends.base import BaseBackend
+from blinkstick.devices.device import BlinkStickDevice
 from blinkstick.exceptions import BlinkStickException
 
 
 class Win32Backend(BaseBackend[hid.HidDevice]):
     serial: str
-    device: hid.HidDevice
+    blinkstick_device: BlinkStickDevice[hid.HidDevice]
     reports: list[hid.core.HidReport]
 
-    def __init__(self, device=None):
+    def __init__(self, device: BlinkStickDevice[hid.HidDevice]):
         super().__init__()
-        self.device = device
+        self.blinkstick_device = device
         if device:
-            self.device.open()
-            self.reports = self.device.find_feature_reports()
+            self.blinkstick_device.raw_device.open()
+            self.reports = self.blinkstick_device.raw_device.find_feature_reports()
             self.serial = self.get_serial()
 
     @staticmethod
-    def find_by_serial(serial: str) -> list[hid.HidDevice] | None:
-        found_devices = Win32Backend.find_blinksticks() or []
-        devices = [d for d in found_devices if d.serial_number == serial]
-
-        if len(devices) > 0:
-            return devices
+    def find_by_serial(serial: str) -> list[BlinkStickDevice[hid.HidDevice]] | None:
+        found_devices = Win32Backend.get_attached_blinkstick_devices()
+        for d in found_devices:
+            if d.serial == serial:
+                return [d]
 
         return None
 
-    def _refresh_device(self):
+    def _refresh_attached_blinkstick_device(self):
         # TODO This is weird semantics. fix up return values to be more sensible
         if not self.serial:
             return False
         if devices := self.find_by_serial(self.serial):
-            self.device = devices[0]
-            self.device.open()
-            self.reports = self.device.find_feature_reports()
+            self.blinkstick_device = devices[0]
+            self.blinkstick_device.raw_device.open()
+            self.reports = self.blinkstick_device.raw_device.find_feature_reports()
             return True
 
     @staticmethod
-    def find_blinksticks(find_all: bool = True) -> list[hid.HidDevice] | None:
+    def get_attached_blinkstick_devices(
+        find_all: bool = True,
+    ) -> list[BlinkStickDevice[hid.HidDevice]]:
         devices = hid.HidDeviceFilter(
             vendor_id=VENDOR_ID, product_id=PRODUCT_ID
         ).get_devices()
+
+        blinkstick_devices = [
+            BlinkStickDevice(
+                raw_device=device,
+                serial=device.serial_number,
+                manufacturer=device.vendor_name,
+                version_attribute=device.version_number,
+                description=device.product_name,
+            )
+            for device in devices
+        ]
         if find_all:
-            return devices
-        elif len(devices) > 0:
-            return devices[0]
-        else:
-            return None
+            return blinkstick_devices
+
+        return blinkstick_devices[:1]
 
     def control_transfer(
         self, bmRequestType, bRequest, wValue, wIndex, data_or_wLength
@@ -68,9 +79,9 @@ class Win32Backend(BaseBackend[hid.HidDevice]):
                     *[c_ubyte(c) for c in data_or_wLength]
                 )
             data[0] = wValue
-            if not self.device.send_feature_report(data):
-                if self._refresh_device():
-                    self.device.send_feature_report(data)
+            if not self.blinkstick_device.raw_device.send_feature_report(data):
+                if self._refresh_attached_blinkstick_device():
+                    self.blinkstick_device.raw_device.send_feature_report(data)
                 else:
                     raise BlinkStickException(
                         "Could not communicate with BlinkStick {0} - it may have been removed".format(
@@ -80,15 +91,3 @@ class Win32Backend(BaseBackend[hid.HidDevice]):
 
         elif bmRequestType == 0x80 | 0x20:
             return self.reports[wValue - 1].get()
-
-    def get_serial(self) -> str:
-        return str(self.device.serial_number)
-
-    def get_manufacturer(self) -> str:
-        return str(self.device.vendor_name)
-
-    def get_version_attribute(self) -> int:
-        return int(self.device.version_number)
-
-    def get_description(self) -> str:
-        return str(self.device.product_name)
