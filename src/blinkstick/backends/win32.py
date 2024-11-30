@@ -46,16 +46,14 @@ class Win32Backend(BaseBackend[hid.HidDevice]):
     @staticmethod
     def get_attached_blinkstick_devices(
         find_all: bool = True,
-    ) -> list[hid.HidDevice] | None:
+    ) -> list[hid.HidDevice]:
         devices = hid.HidDeviceFilter(
             vendor_id=VENDOR_ID, product_id=PRODUCT_ID
         ).get_devices()
         if find_all:
             return devices
-        elif len(devices) > 0:
-            return devices[0]
-        else:
-            return None
+
+        return devices[:1]
 
     def control_transfer(
         self, bmRequestType, bRequest, wValue, wIndex, data_or_wLength

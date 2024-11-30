@@ -20,7 +20,7 @@ class BaseBackend(ABC, Generic[T]):
 
     @staticmethod
     @abstractmethod
-    def get_attached_blinkstick_devices(find_all: bool = True) -> list[T] | None:
+    def get_attached_blinkstick_devices(find_all: bool = True) -> list[T]:
         raise NotImplementedError
 
     @staticmethod
