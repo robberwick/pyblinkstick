@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 
 from typing import TypeVar, Generic
 
-from blinkstick.devices.device import BlinkStickDevice
+from blinkstick.devices import BlinkStickDevice
 
 T = TypeVar("T")
 

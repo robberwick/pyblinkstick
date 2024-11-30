@@ -5,7 +5,7 @@ import usb.util  # type: ignore
 
 from blinkstick.constants import VENDOR_ID, PRODUCT_ID
 from blinkstick.backends.base import BaseBackend
-from blinkstick.devices.device import BlinkStickDevice
+from blinkstick.devices import BlinkStickDevice
 from blinkstick.exceptions import BlinkStickException
 
 
