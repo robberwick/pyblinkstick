@@ -21,7 +21,7 @@ dev = ["black", "isort", "mypy"]
 test = ["coverage", "pytest", "pytest-cov", "pytest-mock"]
 
 [project.scripts]
-blinkstick = "blinkstick.main:main"
+blinkstick = "scripts.main:main"
 
 [project.urls]
 homepage = "https://pypi.python.org/pypi/blinkstick/"

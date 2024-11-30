@@ -6,7 +6,7 @@ import sys
 import logging
 
 from blinkstick import find_all, find_by_serial, get_blinkstick_package_version
-from .constants import BlinkStickVariant
+from blinkstick.constants import BlinkStickVariant
 
 logging.basicConfig()
 
