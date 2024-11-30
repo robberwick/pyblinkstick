@@ -14,7 +14,6 @@ from blinkstick.colors import (
 )
 from blinkstick.constants import BlinkStickVariant
 from blinkstick.devices import BlinkStickDevice
-from blinkstick.exceptions import BlinkStickException
 from blinkstick.utilities import string_to_info_block_data
 
 if sys.platform == "win32":
