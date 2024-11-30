@@ -5,7 +5,7 @@ import textwrap
 import sys
 import logging
 
-from .blinkstick import get_blinkstick_package_version, find_all, find_by_serial
+from blinkstick import find_all, find_by_serial, get_blinkstick_package_version
 from .constants import BlinkStickVariant
 
 logging.basicConfig()

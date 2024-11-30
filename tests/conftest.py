@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from blinkstick.blinkstick import BlinkStick
+from blinkstick.clients.blinkstick import BlinkStick
 
 
 @pytest.fixture

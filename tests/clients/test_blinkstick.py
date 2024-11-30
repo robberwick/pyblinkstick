@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from blinkstick import ColorFormat
-from blinkstick.blinkstick import BlinkStick
+from blinkstick.clients.blinkstick import BlinkStick
 from blinkstick.constants import BlinkStickVariant
 from pytest_mock import MockFixture
 
