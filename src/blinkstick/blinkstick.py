@@ -15,6 +15,7 @@ from blinkstick.colors import (
     ColorFormat,
 )
 from blinkstick.constants import VENDOR_ID, PRODUCT_ID, BlinkStickVariant
+from blinkstick.devices.device import BlinkStickDevice
 from blinkstick.exceptions import BlinkStickException
 from blinkstick.utilities import string_to_info_block_data
 
@@ -51,7 +52,9 @@ class BlinkStick:
     backend: USBBackend
     bs_serial: str
 
-    def __init__(self, device=None, error_reporting: bool = True):
+    def __init__(
+        self, device: BlinkStickDevice | None = None, error_reporting: bool = True
+    ):
         """
         Constructor for the class.
 
@@ -1418,10 +1421,10 @@ def find_first() -> BlinkStick | None:
     @rtype: BlinkStick
     @return: BlinkStick object or None if no devices are found
     """
-    d = USBBackend.get_attached_blinkstick_devices(find_all=False)
+    blinkstick_devices = USBBackend.get_attached_blinkstick_devices(find_all=False)
 
-    if d:
-        return BlinkStick(device=d)
+    if blinkstick_devices:
+        return BlinkStick(device=blinkstick_devices[0])
 
     return None
 
