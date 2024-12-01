@@ -1,8 +1,7 @@
-import blinkstick.core
-from blinkstick.clients import blinkstick
+from blinkstick import find_first
 from blinkstick.exceptions import BlinkStickException
 
-bs = blinkstick.core.find_first()
+bs = find_first()
 
 if bs is None:
     print("Could not find any BlinkSticks")
