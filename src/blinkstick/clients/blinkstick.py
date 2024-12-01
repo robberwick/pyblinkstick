@@ -12,7 +12,7 @@ from blinkstick.colors import (
     remap_rgb_value_reverse,
     ColorFormat,
 )
-from blinkstick.constants import BlinkStickVariant
+from blinkstick.enums import BlinkStickVariant
 from blinkstick.devices import BlinkStickDevice
 from blinkstick.utilities import string_to_info_block_data
 
