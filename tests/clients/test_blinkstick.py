@@ -2,9 +2,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from blinkstick import ColorFormat
+from blinkstick.colors import ColorFormat
+from blinkstick.enums import BlinkStickVariant
 from blinkstick.clients.blinkstick import BlinkStick
-from blinkstick.constants import BlinkStickVariant
 from pytest_mock import MockFixture
 
 from tests.conftest import make_blinkstick
@@ -54,8 +54,8 @@ def test_get_variant(
     make_blinkstick, serial, version_attribute, expected_variant, expected_variant_value
 ):
     bs = make_blinkstick()
-    bs.get_serial = MagicMock(return_value=serial)
-    bs.backend.get_version_attribute = MagicMock(return_value=version_attribute)
+    synthesised_variant = BlinkStickVariant.identify(int(serial[-3]), version_attribute)
+    bs.backend.get_variant = MagicMock(return_value=synthesised_variant)
     assert bs.get_variant() == expected_variant
     assert bs.get_variant().value == expected_variant_value
 
