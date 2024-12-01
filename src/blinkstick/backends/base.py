@@ -55,3 +55,6 @@ class BaseBackend(ABC, Generic[T]):
 
     def get_description(self):
         return self.blinkstick_device.description
+
+    def get_variant(self):
+        return self.blinkstick_device.variant

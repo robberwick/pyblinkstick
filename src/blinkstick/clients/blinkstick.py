@@ -97,12 +97,7 @@ class BlinkStick:
         @return: BlinkStickVariant.UNKNOWN, BlinkStickVariant.BLINKSTICK, BlinkStickVariant.BLINKSTICK_PRO and etc
         """
 
-        serial = self.get_serial()
-        major = serial[-3]
-
-        version_attribute = self.backend.get_version_attribute()
-
-        return BlinkStickVariant.identify(int(major), version_attribute)
+        return self.backend.get_variant()
 
     def get_variant_string(self) -> str:
         """
