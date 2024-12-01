@@ -21,7 +21,7 @@ class BlinkStickVariant(Enum):
         return self._value_[1]
 
     @staticmethod
-    def identify(
+    def from_version_attrs(
         major_version: int, version_attribute: int | None
     ) -> "BlinkStickVariant":
         if major_version == 1:

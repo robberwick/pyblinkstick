@@ -54,7 +54,9 @@ def test_get_variant(
     make_blinkstick, serial, version_attribute, expected_variant, expected_variant_value
 ):
     bs = make_blinkstick()
-    synthesised_variant = BlinkStickVariant.identify(int(serial[-3]), version_attribute)
+    synthesised_variant = BlinkStickVariant.from_version_attrs(
+        int(serial[-3]), version_attribute
+    )
     bs.backend.get_variant = MagicMock(return_value=synthesised_variant)
     assert bs.get_variant() == expected_variant
     assert bs.get_variant().value == expected_variant_value
