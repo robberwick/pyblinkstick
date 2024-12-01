@@ -9,16 +9,14 @@ from blinkstick.constants import VENDOR_ID, PRODUCT_ID
 from blinkstick.backends.base import BaseBackend
 from blinkstick.devices import BlinkStickDevice
 from blinkstick.exceptions import BlinkStickException
+from blinkstick.models import SerialDetails
 
 
 class Win32Backend(BaseBackend[hid.HidDevice]):
-    serial: str
-    blinkstick_device: BlinkStickDevice[hid.HidDevice]
     reports: list[hid.core.HidReport]
 
     def __init__(self, device: BlinkStickDevice[hid.HidDevice]):
-        super().__init__()
-        self.blinkstick_device = device
+        super().__init__(device=device)
         if device:
             self.blinkstick_device.raw_device.open()
             self.reports = self.blinkstick_device.raw_device.find_feature_reports()
@@ -28,16 +26,16 @@ class Win32Backend(BaseBackend[hid.HidDevice]):
     def find_by_serial(serial: str) -> list[BlinkStickDevice[hid.HidDevice]] | None:
         found_devices = Win32Backend.get_attached_blinkstick_devices()
         for d in found_devices:
-            if d.serial == serial:
+            if d.serial_details.serial == serial:
                 return [d]
 
         return None
 
     def _refresh_attached_blinkstick_device(self):
         # TODO This is weird semantics. fix up return values to be more sensible
-        if not self.serial:
+        if not self.blinkstick_device:
             return False
-        if devices := self.find_by_serial(self.serial):
+        if devices := self.find_by_serial(self.blinkstick_device.serial_details.serial):
             self.blinkstick_device = devices[0]
             self.blinkstick_device.raw_device.open()
             self.reports = self.blinkstick_device.raw_device.find_feature_reports()
@@ -54,7 +52,7 @@ class Win32Backend(BaseBackend[hid.HidDevice]):
         blinkstick_devices = [
             BlinkStickDevice(
                 raw_device=device,
-                serial=device.serial_number,
+                serial_details=SerialDetails(serial=device.serial_number),
                 manufacturer=device.vendor_name,
                 version_attribute=device.version_number,
                 description=device.product_name,

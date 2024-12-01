@@ -11,11 +11,10 @@ T = TypeVar("T")
 
 class BaseBackend(ABC, Generic[T]):
 
-    serial: str | None
     blinkstick_device: BlinkStickDevice[T]
 
-    def __init__(self):
-        self.serial = None
+    def __init__(self, device: BlinkStickDevice[T]):
+        self.blinkstick_device = device
 
     @abstractmethod
     def _refresh_attached_blinkstick_device(self):
@@ -45,7 +44,7 @@ class BaseBackend(ABC, Generic[T]):
         raise NotImplementedError
 
     def get_serial(self) -> str:
-        return self.blinkstick_device.serial
+        return self.blinkstick_device.serial_details.serial
 
     def get_manufacturer(self) -> str:
         return self.blinkstick_device.manufacturer
