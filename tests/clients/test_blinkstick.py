@@ -7,12 +7,30 @@ from blinkstick.enums import BlinkStickVariant
 from blinkstick.clients.blinkstick import BlinkStick
 from pytest_mock import MockFixture
 
+from blinkstick.exceptions import NotConnected
 from tests.conftest import make_blinkstick
 
 
 def test_instantiate():
+    """Test that we can instantiate a BlinkStick object."""
     bs = BlinkStick()
     assert bs is not None
+
+
+def test_all_methods_require_backend(make_blinkstick):
+    """Test that all methods require a backend."""
+    bs = make_blinkstick()
+    bs.backend = None  # noqa
+
+    class_methods = (
+        method
+        for method in dir(BlinkStick)
+        if callable(getattr(bs, method)) and not method.startswith("__")
+    )
+    for method_name in class_methods:
+        method = getattr(bs, method_name)
+        with pytest.raises(NotConnected):
+            method()
 
 
 @pytest.mark.parametrize(
