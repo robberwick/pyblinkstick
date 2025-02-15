@@ -12,8 +12,10 @@ from blinkstick.colors import (
     remap_rgb_value_reverse,
     ColorFormat,
 )
-from blinkstick.enums import BlinkStickVariant
+from blinkstick.decorators import no_backend_required
 from blinkstick.devices import BlinkStickDevice
+from blinkstick.enums import BlinkStickVariant
+from blinkstick.exceptions import NotConnected
 from blinkstick.utilities import string_to_info_block_data
 
 if sys.platform == "win32":
@@ -62,6 +64,19 @@ class BlinkStick:
         if device:
             self.backend = USBBackend(device)
             self.bs_serial = self.get_serial()
+
+    def __getattribute__(self, name):
+        """Default all callables to require a backend unless they have the no_backend_required attribute"""
+        attr = object.__getattribute__(self, name)
+        if callable(attr) and not getattr(attr, "no_backend_required", False):
+
+            def wrapper(*args, **kwargs):
+                if self.backend is None:
+                    raise NotConnected("No backend set")
+                return attr(*args, **kwargs)
+
+            return wrapper
+        return attr
 
     def get_serial(self) -> str:
         """
