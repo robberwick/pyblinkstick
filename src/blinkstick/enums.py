@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, IntEnum
 
 
 class BlinkStickVariant(Enum):
@@ -38,3 +38,9 @@ class BlinkStickVariant(Enum):
             elif version_attribute == 0x203:
                 return BlinkStickVariant.BLINKSTICK_FLEX
         return BlinkStickVariant.UNKNOWN
+
+
+class Mode(IntEnum):
+    RGB = 1
+    RGB_INVERSE = 2
+    ADDRESSABLE = 3
