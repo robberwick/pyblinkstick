@@ -20,6 +20,7 @@ class BlinkStickDevice(Generic[T]):
     variant: BlinkStickVariant = field(init=False)
 
     def __post_init__(self):
+        self.major_version = self.serial_details.major_version
         self.variant = BlinkStickVariant.from_version_attrs(
             major_version=self.serial_details.major_version,
             version_attribute=self.version_attribute,
