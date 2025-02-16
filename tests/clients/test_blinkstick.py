@@ -17,10 +17,11 @@ def test_instantiate():
     assert bs is not None
 
 
-def test_all_methods_require_backend(make_blinkstick):
+def test_all_methods_require_backend():
     """Test that all methods require a backend."""
-    bs = make_blinkstick()
-    bs.backend = None  # noqa
+    # Create an instance of BlinkStick. Note that we do not use the mock, or pass a device.
+    # This is deliberate, as we want to test that all methods raise an exception when the backend is not set.
+    bs = BlinkStick()
 
     class_methods = (
         method
