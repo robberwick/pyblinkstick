@@ -14,7 +14,7 @@ from blinkstick.colors import (
 )
 from blinkstick.decorators import no_backend_required
 from blinkstick.devices import BlinkStickDevice
-from blinkstick.enums import BlinkStickVariant
+from blinkstick.enums import BlinkStickVariant, Mode
 from blinkstick.exceptions import NotConnected
 from blinkstick.utilities import string_to_info_block_data
 
@@ -373,7 +373,7 @@ class BlinkStick:
 
         return device_bytes[2 : 2 + count * 3]
 
-    def set_mode(self, mode: int) -> None:
+    def set_mode(self, mode: Mode | int) -> None:
         """
         Set backend mode for BlinkStick Pro. Device currently supports the following modes:
 
@@ -388,6 +388,10 @@ class BlinkStick:
         @type  mode: int
         @param mode: Device mode to set
         """
+        # If mode is an enum, get the value
+        # this will allow the user to pass in the enum directly, and also gate the value to the enum values
+        if not isinstance(mode, int):
+            mode = Mode(mode).value
         control_string = bytes(bytearray([4, mode]))
 
         self.backend.control_transfer(0x20, 0x9, 0x0004, 0, control_string)
