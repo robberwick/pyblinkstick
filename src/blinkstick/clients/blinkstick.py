@@ -71,7 +71,7 @@ class BlinkStick:
         if callable(attr) and not getattr(attr, "no_backend_required", False):
 
             def wrapper(*args, **kwargs):
-                if self.backend is None:
+                if not getattr(self, "backend", None):
                     raise NotConnected("No backend set")
                 return attr(*args, **kwargs)
 
