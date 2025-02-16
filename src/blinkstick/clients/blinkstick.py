@@ -78,6 +78,22 @@ class BlinkStick:
             return wrapper
         return attr
 
+    def __repr__(self):
+        try:
+            serial = self.get_serial()
+            variant = self.get_variant().description
+        except NotConnected:
+            return "<BlinkStick: Not connected>"
+        return f"<BlinkStick: Variant={variant} Serial={serial}>"
+
+    def __str__(self):
+        try:
+            serial = self.get_serial()
+            variant = self.get_variant().description
+        except NotConnected:
+            return "Blinkstick - Not connected"
+        return f"{variant} ({serial})"
+
     def get_serial(self) -> str:
         """
         Returns the serial number of backend.::
