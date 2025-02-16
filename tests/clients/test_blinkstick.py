@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from blinkstick.colors import ColorFormat
-from blinkstick.enums import BlinkStickVariant
+from blinkstick.enums import BlinkStickVariant, Mode
 from blinkstick.clients.blinkstick import BlinkStick
 from pytest_mock import MockFixture
 
@@ -310,3 +310,26 @@ def test_inverse_does_not_affect_max_rgb_value(make_blinkstick):
     bs.set_max_rgb_value(100)
     bs.set_inverse(True)
     assert bs.get_max_rgb_value() == 100
+
+
+@pytest.mark.parametrize(
+    "mode, is_valid",
+    [
+        (1, True),
+        (2, True),
+        (3, True),
+        (4, False),
+        (-1, False),
+        (Mode.RGB, True),
+        (Mode.RGB_INVERSE, True),
+        (Mode.ADDRESSABLE, True),
+    ],
+)
+def test_set_mode_raises_on_invalid_mode(make_blinkstick, mode, is_valid):
+    """Test that set_mode raises an exception when an invalid mode is passed."""
+    bs = make_blinkstick()
+    if is_valid:
+        bs.set_mode(mode)
+    else:
+        with pytest.raises(ValueError):
+            bs.set_mode("invalid_mode")  # noqa
