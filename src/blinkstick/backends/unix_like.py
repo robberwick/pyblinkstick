@@ -6,7 +6,7 @@ import usb.util  # type: ignore
 from blinkstick.constants import VENDOR_ID, PRODUCT_ID
 from blinkstick.backends.base import BaseBackend
 from blinkstick.devices import BlinkStickDevice
-from blinkstick.exceptions import BlinkStickException
+from blinkstick.exceptions import BlinkStickException, USBBackendNotAvailable
 from blinkstick.models import SerialDetails
 
 
@@ -38,10 +38,18 @@ class UnixLikeBackend(BaseBackend[usb.core.Device]):
     def get_attached_blinkstick_devices(
         find_all: bool = True,
     ) -> list[BlinkStickDevice[usb.core.Device]]:
-        raw_devices = (
-            usb.core.find(find_all=find_all, idVendor=VENDOR_ID, idProduct=PRODUCT_ID)
-            or []
-        )
+        try:
+            raw_devices = (
+                usb.core.find(
+                    find_all=find_all, idVendor=VENDOR_ID, idProduct=PRODUCT_ID
+                )
+                or []
+            )
+        except usb.core.NoBackendError:
+            # TODO: improve this error message to provide more information on how to remediate the problem
+            raise USBBackendNotAvailable(
+                "Could not find USB backend. Is libusb installed?"
+            )
         return [
             # TODO: refactor this to DRY up the usb.util.get_string calls
             BlinkStickDevice(
