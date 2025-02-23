@@ -50,19 +50,29 @@ class UnixLikeBackend(BaseBackend[usb.core.Device]):
             raise USBBackendNotAvailable(
                 "Could not find USB backend. Is libusb installed?"
             )
-        return [
-            # TODO: refactor this to DRY up the usb.util.get_string calls
-            BlinkStickDevice(
-                raw_device=device,
-                serial_details=SerialDetails(
-                    serial=str(usb.util.get_string(device, 3, 1033))
-                ),
-                manufacturer=str(usb.util.get_string(device, 1, 1033)),
-                version_attribute=device.bcdDevice,
-                description=str(usb.util.get_string(device, 2, 1033)),
-            )
-            for device in raw_devices
-        ]
+
+        try:
+            devices = [
+                # TODO: refactor this to DRY up the usb.util.get_string calls
+                BlinkStickDevice(
+                    raw_device=device,
+                    serial_details=SerialDetails(
+                        serial=str(usb.util.get_string(device, 3, 1033))
+                    ),
+                    manufacturer=str(usb.util.get_string(device, 1, 1033)),
+                    version_attribute=device.bcdDevice,
+                    description=str(usb.util.get_string(device, 2, 1033)),
+                )
+                for device in raw_devices
+            ]
+        except usb.core.USBError as e:
+            # if the error is due to a permission issue, raise a more specific exception
+            if "Operation not permitted" in str(e):
+                raise USBBackendNotAvailable(
+                    "Permission denied accessing USB backend. Does a udev rule need to be added?"
+                )
+            raise
+        return devices
 
     @staticmethod
     def find_by_serial(serial: str) -> list[BlinkStickDevice[usb.core.Device]] | None:
