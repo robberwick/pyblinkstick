@@ -269,21 +269,12 @@ def main():
         "--add-udev-rule",
         action="store_true",
         dest="udev",
-        help="Add udev rule to access BlinkSticks without root permissions. Must be run as root.",
+        help="Add udev rule to access BlinkSticks without root permissions. Must be run as root e.g. `sudo $(which blinkstick) --add-udev-rule`.",
     )
 
     parser.add_option_group(group)
 
     (options, args) = parser.parse_args()
-
-    if options.serial is None:
-        sticks = find_all()
-    else:
-        sticks = [find_by_serial(options.serial)]
-
-        if len(sticks) == 0:
-            print("BlinkStick with serial number " + options.backend + " not found...")
-            return 64
 
     # Global action
     if options.udev:
@@ -306,6 +297,15 @@ def main():
 
         print("Reboot your computer for changes to take effect")
         return 0
+
+    if options.serial is None:
+        sticks = find_all()
+    else:
+        sticks = [find_by_serial(options.serial)]
+
+        if len(sticks) == 0:
+            print("BlinkStick with serial number " + options.serial + " not found...")
+            return 64
 
     for stick in sticks:
         if options.inverse:
