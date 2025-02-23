@@ -7,3 +7,7 @@ class BlinkStickException(Exception):
 
 class NotConnected(BlinkStickException):
     pass
+
+
+class USBBackendNotAvailable(BlinkStickException):
+    pass
