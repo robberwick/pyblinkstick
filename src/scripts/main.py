@@ -304,7 +304,7 @@ def main():
         sticks = [find_by_serial(options.serial)]
 
         if len(sticks) == 0:
-            print("BlinkStick with serial number " + options.backend + " not found...")
+            print("BlinkStick with serial number " + options.serial + " not found...")
             return 64
 
     for stick in sticks:
