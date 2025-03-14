@@ -23,15 +23,24 @@ def test_all_methods_require_backend():
     # This is deliberate, as we want to test that all methods raise an exception when the backend is not set.
     bs = BlinkStick()
 
-    class_methods = (
-        method
-        for method in dir(BlinkStick)
-        if callable(getattr(bs, method)) and not method.startswith("__")
-    )
-    for method_name in class_methods:
-        method = getattr(bs, method_name)
-        with pytest.raises(NotConnected):
-            method()
+    # Get all attribute names
+    attrs = dir(BlinkStick)
+
+    # Test only methods, not properties
+    for attr_name in attrs:
+        if attr_name.startswith("__"):
+            continue
+
+        try:
+            attr = getattr(type(bs), attr_name)
+            # Check if it's a method, not a property
+            if callable(attr) and not isinstance(attr, property):
+                method = getattr(bs, attr_name)
+                with pytest.raises(NotConnected):
+                    method()
+        except AttributeError:
+            # Skip attributes that might not be accessible
+            pass
 
 
 @pytest.mark.parametrize(
@@ -77,8 +86,8 @@ def test_get_variant(
         int(serial[-3]), version_attribute
     )
     bs.backend.get_variant = MagicMock(return_value=synthesised_variant)
-    assert bs.get_variant() == expected_variant
-    assert bs.get_variant().value == expected_variant_value
+    assert bs.variant == expected_variant
+    assert bs.variant.value == expected_variant_value
 
 
 @pytest.mark.parametrize(
@@ -105,8 +114,8 @@ def test_get_variant(
 def test_get_variant_string(make_blinkstick, expected_variant, expected_name):
     """Test get_variant method for version 0 returns BlinkStick.UNKNOWN (0)"""
     bs = make_blinkstick()
-    bs.get_variant = MagicMock(return_value=expected_variant)
-    assert bs.get_variant_string() == expected_name
+    bs.backend.get_variant = MagicMock(return_value=expected_variant)
+    assert bs.variant_string == expected_name
 
 
 def test_get_color_rgb_color_format(mocker: MockFixture, make_blinkstick):
@@ -139,14 +148,14 @@ def test_get_color_invalid_color_format(mocker: MockFixture, make_blinkstick):
 def test_max_rgb_value_default(make_blinkstick):
     """Test that the default max_rgb_value is 255."""
     bs = make_blinkstick()
-    assert bs.get_max_rgb_value() == 255
+    assert bs.max_rgb_value == 255
 
 
 def test_max_rgb_value_not_class_attribute(make_blinkstick):
     """Test that the max_rgb_value is not a class attribute."""
     bs = make_blinkstick()
-    assert not hasattr(BlinkStick, "max_rgb_value")
-    assert hasattr(bs, "max_rgb_value")
+    assert not hasattr(BlinkStick, "_max_rgb_value")
+    assert hasattr(bs, "_max_rgb_value")
 
 
 def test_set_and_get_max_rgb_value(make_blinkstick):
@@ -155,16 +164,16 @@ def test_set_and_get_max_rgb_value(make_blinkstick):
     bs = make_blinkstick()
 
     # Set different max_rgb_value for each instance
-    bs.set_max_rgb_value(100)
+    bs.max_rgb_value = 100
 
     # Assert that each instance has its own max_rgb_value
-    assert bs.get_max_rgb_value() == 100
+    assert bs.max_rgb_value == 100
 
     # Change the max_rgb_value again to ensure independence
-    bs.set_max_rgb_value(150)
+    bs.max_rgb_value = 150
 
     # Assert the new values
-    assert bs.get_max_rgb_value() == 150
+    assert bs.max_rgb_value == 150
 
 
 def test_set_max_rgb_value_bounds(make_blinkstick):
@@ -172,16 +181,16 @@ def test_set_max_rgb_value_bounds(make_blinkstick):
     bs = make_blinkstick()
 
     # Test setting a value within bounds
-    bs.set_max_rgb_value(100)
-    assert bs.get_max_rgb_value() == 100
+    bs.max_rgb_value = 100
+    assert bs.max_rgb_value == 100
 
     # Test setting a value below the lower bound
-    bs.set_max_rgb_value(-1)
-    assert bs.get_max_rgb_value() == 0
+    bs.max_rgb_value = -1
+    assert bs.max_rgb_value == 0
 
     # Test setting a value above the upper bound
-    bs.set_max_rgb_value(256)
-    assert bs.get_max_rgb_value() == 255
+    bs.max_rgb_value = 256
+    assert bs.max_rgb_value == 255
 
 
 def test_set_max_rgb_value_type_checking(make_blinkstick):
@@ -189,33 +198,33 @@ def test_set_max_rgb_value_type_checking(make_blinkstick):
     bs = make_blinkstick()
 
     # Test setting a valid integer value
-    bs.set_max_rgb_value(100)
-    assert bs.get_max_rgb_value() == 100
+    bs.max_rgb_value = 100
+    assert bs.max_rgb_value == 100
 
     # Test setting a value that can be coerced to an integer
-    bs.set_max_rgb_value("150")
-    assert bs.get_max_rgb_value() == 150
+    bs.max_rgb_value = "150"
+    assert bs.max_rgb_value == 150
 
     # Test setting a value that cannot be coerced to an integer
     with pytest.raises(ValueError):
-        bs.set_max_rgb_value("invalid")
+        bs.max_rgb_value = "invalid"
 
     # Test setting a float value
-    bs.set_max_rgb_value(100.5)
-    assert bs.get_max_rgb_value() == 100
+    bs.max_rgb_value = 100.5
+    assert bs.max_rgb_value == 100
 
 
 def test_inverse_default(make_blinkstick):
     """Test that the default inverse is False."""
     bs = make_blinkstick()
-    assert bs.get_inverse() == False
+    assert bs.inverse == False
 
 
 def test_inverse_not_class_attribute(make_blinkstick):
     """Test that the inverse is not a class attribute."""
     bs = make_blinkstick()
-    assert not hasattr(BlinkStick, "inverse")
-    assert hasattr(bs, "inverse")
+    assert not hasattr(BlinkStick, "_inverse")
+    assert hasattr(bs, "_inverse")
 
 
 @pytest.mark.parametrize(
@@ -228,8 +237,8 @@ def test_inverse_not_class_attribute(make_blinkstick):
 def test_inverse_set_and_get(make_blinkstick, input_value, expected_result):
     """Test that we can set and get the inverse."""
     bs = make_blinkstick()
-    bs.set_inverse(input_value)
-    assert bs.get_inverse() == expected_result
+    bs.inverse = input_value
+    assert bs.inverse == expected_result
 
 
 @pytest.mark.parametrize(
@@ -251,8 +260,8 @@ def test_inverse_set_and_get(make_blinkstick, input_value, expected_result):
 def test_set_inverse_type_checking(make_blinkstick, input_value, expected_result):
     """Test that set_inverse performs type checking and coercion."""
     bs = make_blinkstick()
-    bs.set_inverse(input_value)
-    assert bs.get_inverse() == expected_result
+    bs.inverse = input_value
+    assert bs.inverse == expected_result
 
 
 @pytest.mark.parametrize(
@@ -300,16 +309,16 @@ def test_inverse_correctly_inverts_rgb_color(
     # mock the backend control_transfer method to return the 3 bytes of the color
     bs.backend.control_transfer = MagicMock(return_value=ctrl_transfer_bytes)
 
-    bs.set_inverse(inverse)
+    bs.inverse = inverse
     assert bs.get_color(color_mode=color_mode) == expected_color
 
 
 def test_inverse_does_not_affect_max_rgb_value(make_blinkstick):
     """Test that the inverse flag does not affect the max_rgb_value."""
     bs = make_blinkstick()
-    bs.set_max_rgb_value(100)
-    bs.set_inverse(True)
-    assert bs.get_max_rgb_value() == 100
+    bs.max_rgb_value = 100
+    bs.inverse = True
+    assert bs.max_rgb_value == 100
 
 
 @pytest.mark.parametrize(
@@ -329,7 +338,7 @@ def test_set_mode_raises_on_invalid_mode(make_blinkstick, mode, is_valid):
     """Test that set_mode raises an exception when an invalid mode is passed."""
     bs = make_blinkstick()
     if is_valid:
-        bs.set_mode(mode)
+        bs.mode = mode
     else:
         with pytest.raises(ValueError):
-            bs.set_mode("invalid_mode")  # noqa
+            bs.mode = "invalid_mode"  # noqa

@@ -88,23 +88,23 @@ class IndentedHelpFormatterWithNL(IndentedHelpFormatter):
 
 def print_info(stick):
     print("Found backend:")
-    print("    Manufacturer:  {0}".format(stick.get_manufacturer()))
-    print("    Description:   {0}".format(stick.get_description()))
-    print("    Variant:       {0}".format(stick.get_variant_string()))
-    print("    Serial:        {0}".format(stick.get_serial()))
+    print("    Manufacturer:  {0}".format(stick.manufacturer))
+    print("    Description:   {0}".format(stick.description))
+    print("    Variant:       {0}".format(stick.variant_string))
+    print("    Serial:        {0}".format(stick.serial()))
     print("    Current Color: {0}".format(stick.get_color(color_format="hex")))
-    print("    Mode:          {0}".format(stick.get_mode()))
-    if stick.get_variant() == BlinkStickVariant.BLINKSTICK_FLEX:
+    print("    Mode:          {0}".format(stick.mode))
+    if stick.variant == BlinkStickVariant.BLINKSTICK_FLEX:
         try:
-            count = stick.get_led_count()
+            count = stick.led_count
         except:
             count = -1
 
         if count == -1:
             count = "Error"
         print("    LED conf:      {0}".format(count))
-    print("    Info Block 1:  {0}".format(stick.get_info_block1()))
-    print("    Info Block 2:  {0}".format(stick.get_info_block2()))
+    print("    Info Block 1:  {0}".format(stick.info_block1))
+    print("    Info Block 2:  {0}".format(stick.info_block2))
 
 
 def main():
@@ -309,19 +309,19 @@ def main():
 
     for stick in sticks:
         if options.inverse:
-            stick.set_inverse(True)
+            stick.inverse = True
 
-        stick.set_max_rgb_value(int(float(options.limit) / 100.0 * 255))
+        stick.max_rgb_value = int(float(options.limit) / 100.0 * 255)
 
-        stick.set_error_reporting(False)
+        stick.error_reporting = False
 
     # Actions here work on all BlinkSticks
     for stick in sticks:
         if options.infoblock1:
-            stick.set_info_block1(options.infoblock1)
+            stick.info_block1 = options.infoblock1
 
         if options.infoblock2:
-            stick.set_info_block2(options.infoblock2)
+            stick.info_block2 = options.infoblock2
 
         if options.mode:
             if (
@@ -330,7 +330,7 @@ def main():
                 or options.mode == "2"
                 or options.mode == "3"
             ):
-                stick.set_mode(int(options.mode))
+                stick.mode = int(options.mode)
             else:
                 print("Error: Invalid mode parameter value")
 
@@ -338,7 +338,7 @@ def main():
             led_count = int(options.led_count)
 
             if led_count > 0 and led_count <= 32:
-                stick.set_led_count(led_count)
+                stick.led_count = led_count
             else:
                 print("Error: Invalid led-count parameter value")
 

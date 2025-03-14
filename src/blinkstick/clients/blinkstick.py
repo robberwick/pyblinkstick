@@ -41,12 +41,11 @@ class BlinkStick:
     U{https://github.com/arvydas/blinkstick-python/wiki}
     """
 
-    inverse: bool
-    error_reporting = True
-    max_rgb_value: int
+    _inverse: bool
+    _error_reporting = True
+    _max_rgb_value: int
 
     backend: USBBackend
-    bs_serial: str
 
     def __init__(
         self, device: BlinkStickDevice | None = None, error_reporting: bool = True
@@ -57,13 +56,12 @@ class BlinkStick:
         @type  error_reporting: Boolean
         @param error_reporting: display errors if they occur during communication with the backend
         """
-        self.error_reporting = error_reporting
-        self.max_rgb_value = 255
-        self.inverse = False
+        self._error_reporting = error_reporting
+        self._max_rgb_value = 255
+        self._inverse = False
 
         if device:
             self.backend = USBBackend(device)
-            self.bs_serial = self.get_serial()
 
     def __getattribute__(self, name):
         """Default all callables to require a backend unless they have the no_backend_required attribute"""
@@ -80,21 +78,22 @@ class BlinkStick:
 
     def __repr__(self):
         try:
-            serial = self.get_serial()
-            variant = self.get_variant().description
+            serial = self.serial
+            variant = self.variant.description
         except NotConnected:
             return "<BlinkStick: Not connected>"
         return f"<BlinkStick: Variant={variant} Serial={serial}>"
 
     def __str__(self):
         try:
-            serial = self.get_serial()
-            variant = self.get_variant().description
+            serial = self.serial
+            variant = self.variant.description
         except NotConnected:
             return "Blinkstick - Not connected"
         return f"{variant} ({serial})"
 
-    def get_serial(self) -> str:
+    @property
+    def serial(self) -> str:
         """
         Returns the serial number of backend.::
 
@@ -111,7 +110,8 @@ class BlinkStick:
         """
         return self.backend.get_serial()
 
-    def get_manufacturer(self) -> str:
+    @property
+    def manufacturer(self) -> str:
         """
         Get the manufacturer of the backend
 
@@ -120,7 +120,8 @@ class BlinkStick:
         """
         return self.backend.get_manufacturer()
 
-    def get_variant(self) -> BlinkStickVariant:
+    @property
+    def variant(self) -> BlinkStickVariant:
         """
         Get the product variant of the backend.
 
@@ -130,16 +131,18 @@ class BlinkStick:
 
         return self.backend.get_variant()
 
-    def get_variant_string(self) -> str:
+    @property
+    def variant_string(self) -> str:
         """
         Get the product variant of the backend as string.
 
         @rtype: string
         @return: "BlinkStick", "BlinkStick Pro", etc
         """
-        return self.get_variant().description
+        return self.variant.description
 
-    def get_description(self) -> str:
+    @property
+    def description(self) -> str:
         """
         Get the description of the backend
 
@@ -148,14 +151,19 @@ class BlinkStick:
         """
         return self.backend.get_description()
 
-    def set_error_reporting(self, error_reporting: bool) -> None:
+    @property
+    def error_reporting(self) -> bool:
+        return self._error_reporting
+
+    @error_reporting.setter
+    def error_reporting(self, error_reporting: bool) -> None:
         """
         Enable or disable error reporting
 
         @type  error_reporting: Boolean
         @param error_reporting: display errors if they occur during communication with the backend
         """
-        self.error_reporting = error_reporting
+        self._error_reporting = error_reporting
 
     def set_color(
         self,
@@ -194,7 +202,7 @@ class BlinkStick:
         g = int(round(green, 3))
         b = int(round(blue, 3))
 
-        if self.inverse:
+        if self._inverse:
             r, g, b = 255 - r, 255 - g, 255 - b
 
         if index == 0 and channel == 0:
@@ -204,7 +212,7 @@ class BlinkStick:
             control_string = bytes(bytearray([5, channel, index, r, g, b]))
             report_id = 0x0005
 
-        if self.error_reporting:
+        if self._error_reporting:
             self.backend.control_transfer(0x20, 0x9, report_id, 0, control_string)
         else:
             try:
@@ -235,7 +243,7 @@ class BlinkStick:
         except ValueError:
             red = green = blue = 0
 
-        red, green, blue = remap_rgb_value((red, green, blue), self.max_rgb_value)
+        red, green, blue = remap_rgb_value((red, green, blue), self._max_rgb_value)
 
         # TODO - do smarts to determine input type from red var in case it is not int
 
@@ -246,7 +254,7 @@ class BlinkStick:
             device_bytes = self.backend.control_transfer(
                 0x80 | 0x20, 0x1, 0x0001, 0, 33
             )
-            if self.inverse:
+            if self._inverse:
                 return (
                     255 - device_bytes[1],
                     255 - device_bytes[2],
@@ -373,30 +381,8 @@ class BlinkStick:
 
         return device_bytes[2 : 2 + count * 3]
 
-    def set_mode(self, mode: Mode | int) -> None:
-        """
-        Set backend mode for BlinkStick Pro. Device currently supports the following modes:
-
-            - 0 - (default) use R, G and B channels to control single RGB LED
-            - 1 - same as 0, but inverse mode
-            - 2 - control up to 64 WS2812 individual LEDs per each R, G and B channel
-
-        You can find out more about BlinkStick Pro modes:
-
-        U{http://www.blinkstick.com/help/tutorials/blinkstick-pro-modes}
-
-        @type  mode: int
-        @param mode: Device mode to set
-        """
-        # If mode is an enum, get the value
-        # this will allow the user to pass in the enum directly, and also gate the value to the enum values
-        if not isinstance(mode, int):
-            mode = Mode(mode).value
-        control_string = bytes(bytearray([4, mode]))
-
-        self.backend.control_transfer(0x20, 0x9, 0x0004, 0, control_string)
-
-    def get_mode(self) -> int:
+    @property
+    def mode(self) -> int:
         """
         Get BlinkStick Pro mode. Device currently supports the following modes:
 
@@ -419,18 +405,32 @@ class BlinkStick:
         else:
             return -1
 
-    def set_led_count(self, count: int) -> None:
+    @mode.setter
+    def mode(self, mode: Mode | int) -> None:
         """
-        Set number of LEDs for supported devices
+        Set backend mode for BlinkStick Pro. Device currently supports the following modes:
 
-        @type  count: int
-        @param count: number of LEDs to control
+            - 0 - (default) use R, G and B channels to control single RGB LED
+            - 1 - same as 0, but inverse mode
+            - 2 - control up to 64 WS2812 individual LEDs per each R, G and B channel
+
+        You can find out more about BlinkStick Pro modes:
+
+        U{http://www.blinkstick.com/help/tutorials/blinkstick-pro-modes}
+
+        @type  mode: int
+        @param mode: Device mode to set
         """
-        control_string = bytes(bytearray([0x81, count]))
+        # If mode is an enum, get the value
+        # this will allow the user to pass in the enum directly, and also gate the value to the enum values
+        if not isinstance(mode, int):
+            mode = Mode(mode).value
+        control_string = bytes(bytearray([4, mode]))
 
-        self.backend.control_transfer(0x20, 0x9, 0x81, 0, control_string)
+        self.backend.control_transfer(0x20, 0x9, 0x0004, 0, control_string)
 
-    def get_led_count(self) -> int:
+    @property
+    def led_count(self) -> int:
         """
         Get number of LEDs for supported devices
 
@@ -445,7 +445,20 @@ class BlinkStick:
         else:
             return -1
 
-    def get_info_block1(self) -> str:
+    @led_count.setter
+    def led_count(self, count: int) -> None:
+        """
+        Set number of LEDs for supported devices
+
+        @type  count: int
+        @param count: number of LEDs to control
+        """
+        control_string = bytes(bytearray([0x81, count]))
+
+        self.backend.control_transfer(0x20, 0x9, 0x81, 0, control_string)
+
+    @property
+    def info_block1(self) -> str:
         """
         Get the infoblock1 of the backend.
 
@@ -465,7 +478,22 @@ class BlinkStick:
             result += chr(i)
         return result
 
-    def get_info_block2(self) -> str:
+    @info_block1.setter
+    def info_block1(self, data: str) -> None:
+        """
+        Sets the infoblock1 with specified string.
+
+        It fills the rest of 32 bytes with zeros.
+
+        @type  data: str
+        @param data: InfoBlock1 for the backend to set
+        """
+        self.backend.control_transfer(
+            0x20, 0x9, 0x0002, 0, string_to_info_block_data(data)
+        )
+
+    @property
+    def info_block2(self) -> str:
         """
         Get the infoblock2 of the backend.
 
@@ -482,20 +510,8 @@ class BlinkStick:
             result += chr(i)
         return result
 
-    def set_info_block1(self, data: str) -> None:
-        """
-        Sets the infoblock1 with specified string.
-
-        It fills the rest of 32 bytes with zeros.
-
-        @type  data: str
-        @param data: InfoBlock1 for the backend to set
-        """
-        self.backend.control_transfer(
-            0x20, 0x9, 0x0002, 0, string_to_info_block_data(data)
-        )
-
-    def set_info_block2(self, data: str) -> None:
+    @info_block2.setter
+    def info_block2(self, data: str) -> None:
         """
         Sets the infoblock2 with specified string.
 
@@ -670,11 +686,11 @@ class BlinkStick:
         )
         # descale the above values
         r_end, g_end, b_end = remap_rgb_value_reverse(
-            (r_end, g_end, b_end), self.max_rgb_value
+            (r_end, g_end, b_end), self._max_rgb_value
         )
 
         r_start, g_start, b_start = remap_rgb_value_reverse(
-            self._get_color_rgb(index), self.max_rgb_value
+            self._get_color_rgb(index), self._max_rgb_value
         )
 
         if r_start > 255 or g_start > 255 or b_start > 255:
@@ -709,7 +725,8 @@ class BlinkStick:
 
         self.set_color(channel=channel, index=index, red=r_end, green=g_end, blue=b_end)
 
-    def get_inverse(self) -> bool:
+    @property
+    def inverse(self) -> bool:
         """
         Get the value of inverse mode. This applies only to BlinkStick. Please use L{set_mode} for BlinkStick Pro
         to permanently set the inverse mode to the backend.
@@ -717,9 +734,10 @@ class BlinkStick:
         @rtype: bool
         @return: True if inverse mode, otherwise false
         """
-        return self.inverse
+        return self._inverse
 
-    def set_inverse(self, value: bool) -> None:
+    @inverse.setter
+    def inverse(self, value: bool) -> None:
         """
         Set inverse mode. This applies only to BlinkStick. Please use L{set_mode} for BlinkStick Pro
         to permanently set the inverse mode to the backend.
@@ -729,9 +747,21 @@ class BlinkStick:
         """
         if type(value) is str:
             value = value.lower() == "true"  # type: ignore
-        self.inverse = bool(value)
+        self._inverse = bool(value)
 
-    def set_max_rgb_value(self, value: int) -> None:
+    @property
+    def max_rgb_value(self) -> int:
+        """
+        Get RGB color limit. {set_color} function will automatically remap
+        the values to maximum set.
+
+        @rtype: int
+        @return: 0..255 maximum value for each R, G and B color
+        """
+        return self._max_rgb_value
+
+    @max_rgb_value.setter
+    def max_rgb_value(self, value: int) -> None:
         """
         Set RGB color limit. {set_color} function will automatically remap
         the values to maximum supplied.
@@ -741,14 +771,4 @@ class BlinkStick:
         """
         # convert to int and clamp to 0..255
         value = max(0, min(255, int(value)))
-        self.max_rgb_value = value
-
-    def get_max_rgb_value(self) -> int:
-        """
-        Get RGB color limit. {set_color} function will automatically remap
-        the values to maximum set.
-
-        @rtype: int
-        @return: 0..255 maximum value for each R, G and B color
-        """
-        return self.max_rgb_value
+        self._max_rgb_value = value
