@@ -1,157 +1,270 @@
+from __future__ import annotations
+
+import random
 import re
+from dataclasses import dataclass
 from enum import Enum, auto
 
-HEX_COLOR_RE = re.compile(r"^#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})$")
+from blinkstick.exceptions import RGBColorException
+
+HEX_COLOR_PATTERN = re.compile(r"^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{6}$")
 
 
-class ColorHex(Enum):
-    ALICEBLUE = "#f0f8ff"
-    ANTIQUEWHITE = "#faebd7"
-    AQUA = "#00ffff"
-    AQUAMARINE = "#7fffd4"
-    AZURE = "#f0ffff"
-    BEIGE = "#f5f5dc"
-    BISQUE = "#ffe4c4"
-    BLACK = "#000000"
-    BLANCHEDALMOND = "#ffebcd"
-    BLUE = "#0000ff"
-    BLUEVIOLET = "#8a2be2"
-    BROWN = "#a52a2a"
-    BURLYWOOD = "#deb887"
-    CADETBLUE = "#5f9ea0"
-    CHARTREUSE = "#7fff00"
-    CHOCOLATE = "#d2691e"
-    CORAL = "#ff7f50"
-    CORNFLOWERBLUE = "#6495ed"
-    CORNSILK = "#fff8dc"
-    CRIMSON = "#dc143c"
-    CYAN = "#00ffff"
-    DARKBLUE = "#00008b"
-    DARKCYAN = "#008b8b"
-    DARKGOLDENROD = "#b8860b"
-    DARKGRAY = "#a9a9a9"
-    DARKGREY = "#a9a9a9"
-    DARKGREEN = "#006400"
-    DARKKHAKI = "#bdb76b"
-    DARKMAGENTA = "#8b008b"
-    DARKOLIVEGREEN = "#556b2f"
-    DARKORANGE = "#ff8c00"
-    DARKORCHID = "#9932cc"
-    DARKRED = "#8b0000"
-    DARKSALMON = "#e9967a"
-    DARKSEAGREEN = "#8fbc8f"
-    DARKSLATEBLUE = "#483d8b"
-    DARKSLATEGRAY = "#2f4f4f"
-    DARKSLATEGREY = "#2f4f4f"
-    DARKTURQUOISE = "#00ced1"
-    DARKVIOLET = "#9400d3"
-    DEEPPINK = "#ff1493"
-    DEEPSKYBLUE = "#00bfff"
-    DIMGRAY = "#696969"
-    DIMGREY = "#696969"
-    DODGERBLUE = "#1e90ff"
-    FIREBRICK = "#b22222"
-    FLORALWHITE = "#fffaf0"
-    FORESTGREEN = "#228b22"
-    FUCHSIA = "#ff00ff"
-    GAINSBORO = "#dcdcdc"
-    GHOSTWHITE = "#f8f8ff"
-    GOLD = "#ffd700"
-    GOLDENROD = "#daa520"
-    GRAY = "#808080"
-    GREY = "#808080"
-    GREEN = "#008000"
-    GREENYELLOW = "#adff2f"
-    HONEYDEW = "#f0fff0"
-    HOTPINK = "#ff69b4"
-    INDIANRED = "#cd5c5c"
-    INDIGO = "#4b0082"
-    IVORY = "#fffff0"
-    KHAKI = "#f0e68c"
-    LAVENDER = "#e6e6fa"
-    LAVENDERBLUSH = "#fff0f5"
-    LAWNGREEN = "#7cfc00"
-    LEMONCHIFFON = "#fffacd"
-    LIGHTBLUE = "#add8e6"
-    LIGHTCORAL = "#f08080"
-    LIGHTCYAN = "#e0ffff"
-    LIGHTGOLDENRODYELLOW = "#fafad2"
-    LIGHTGRAY = "#d3d3d3"
-    LIGHTGREY = "#d3d3d3"
-    LIGHTGREEN = "#90ee90"
-    LIGHTPINK = "#ffb6c1"
-    LIGHTSALMON = "#ffa07a"
-    LIGHTSEAGREEN = "#20b2aa"
-    LIGHTSKYBLUE = "#87cefa"
-    LIGHTSLATEGRAY = "#778899"
-    LIGHTSLATEGREY = "#778899"
-    LIGHTSTEELBLUE = "#b0c4de"
-    LIGHTYELLOW = "#ffffe0"
-    LIME = "#00ff00"
-    LIMEGREEN = "#32cd32"
-    LINEN = "#faf0e6"
-    MAGENTA = "#ff00ff"
-    MAROON = "#800000"
-    MEDIUMAQUAMARINE = "#66cdaa"
-    MEDIUMBLUE = "#0000cd"
-    MEDIUMORCHID = "#ba55d3"
-    MEDIUMPURPLE = "#9370d8"
-    MEDIUMSEAGREEN = "#3cb371"
-    MEDIUMSLATEBLUE = "#7b68ee"
-    MEDIUMSPRINGGREEN = "#00fa9a"
-    MEDIUMTURQUOISE = "#48d1cc"
-    MEDIUMVIOLETRED = "#c71585"
-    MIDNIGHTBLUE = "#191970"
-    MINTCREAM = "#f5fffa"
-    MISTYROSE = "#ffe4e1"
-    MOCCASIN = "#ffe4b5"
-    NAVAJOWHITE = "#ffdead"
-    NAVY = "#000080"
-    OLDLACE = "#fdf5e6"
-    OLIVE = "#808000"
-    OLIVEDRAB = "#6b8e23"
-    ORANGE = "#ffa500"
-    ORANGERED = "#ff4500"
-    ORCHID = "#da70d6"
-    PALEGOLDENROD = "#eee8aa"
-    PALEGREEN = "#98fb98"
-    PALETURQUOISE = "#afeeee"
-    PALEVIOLETRED = "#d87093"
-    PAPAYAWHIP = "#ffefd5"
-    PEACHPUFF = "#ffdab9"
-    PERU = "#cd853f"
-    PINK = "#ffc0cb"
-    PLUM = "#dda0dd"
-    POWDERBLUE = "#b0e0e6"
-    PURPLE = "#800080"
-    RED = "#ff0000"
-    ROSYBROWN = "#bc8f8f"
-    ROYALBLUE = "#4169e1"
-    SADDLEBROWN = "#8b4513"
-    SALMON = "#fa8072"
-    SANDYBROWN = "#f4a460"
-    SEAGREEN = "#2e8b57"
-    SEASHELL = "#fff5ee"
-    SIENNA = "#a0522d"
-    SILVER = "#c0c0c0"
-    SKYBLUE = "#87ceeb"
-    SLATEBLUE = "#6a5acd"
-    SLATEGRAY = "#708090"
-    SLATEGREY = "#708090"
-    SNOW = "#fffafa"
-    SPRINGGREEN = "#00ff7f"
-    STEELBLUE = "#4682b4"
-    TAN = "#d2b48c"
-    TEAL = "#008080"
-    THISTLE = "#d8bfd8"
-    TOMATO = "#ff6347"
-    TURQUOISE = "#40e0d0"
-    VIOLET = "#ee82ee"
-    WHEAT = "#f5deb3"
-    WHITE = "#ffffff"
-    WHITESMOKE = "#f5f5f5"
-    YELLOW = "#ffff00"
-    YELLOWGREEN = "#9acd32"
+@dataclass()
+class RGBColor:
+    """
+    A color representation.
+
+    :param red: Red component of the color (0-255)
+    :param green: Green component of the color (0-255)
+    :param blue: Blue component of the color (0-255)
+    """
+
+    red: int = 0
+    green: int = 0
+    blue: int = 0
+
+    def __post_init__(self):
+        """
+        Post-initialization processing to set color values.
+        :return:
+        """
+
+        if not all(0 <= value <= 255 for value in (self.red, self.green, self.blue)):
+            raise RGBColorException("Color values must be between 0 and 255")
+
+    @property
+    def hex(self) -> str:
+        """
+        Convert the Color object to a hex color string.
+        """
+        return f"#{self.red:02x}{self.green:02x}{self.blue:02x}"
+
+    def __iter__(self):
+        """
+        Iterate over the color components.
+        """
+        yield self.red
+        yield self.green
+        yield self.blue
+
+    def __invert__(self):
+        """
+        Invert the color.
+        """
+        return RGBColor(
+            red=255 - self.red,
+            green=255 - self.green,
+            blue=255 - self.blue,
+        )
+
+    @classmethod
+    def from_hex(cls, hex_color: str):
+        """
+        Create a Color object from a hex color string.
+        """
+        # Remove leading '#' if present
+        if hex_color.startswith("#"):
+            hex_color = hex_color[1:]
+        # Validate with compiled regex - must be 3 or 6 hex characters
+        if not HEX_COLOR_PATTERN.match(hex_color):
+            raise RGBColorException(
+                f"Invalid hex color: {hex_color}. Must be 3 or 6 hex characters."
+            )
+        # Expand shorthand form (#rgb to #rrggbb)
+        if len(hex_color) == 3:
+            hex_color = "".join(c + c for c in hex_color)
+
+        return cls(
+            red=int(hex_color[0:2], 16),
+            green=int(hex_color[2:4], 16),
+            blue=int(hex_color[4:6], 16),
+        )
+
+    @classmethod
+    def random(cls):
+        """
+        Generate a random color.
+        """
+        return cls(
+            red=random.randint(0, 255),
+            green=random.randint(0, 255),
+            blue=random.randint(0, 255),
+        )
+
+    def remap_to_new_range(self, max_value: int) -> "RGBColor":
+        """
+        Remap the RGB color components and return a new RGBColor instance.
+
+        Note: The returned color will have values outside the standard 0-255 range,
+        so it may not validate correctly when used with other methods.
+
+        :param max_value: The maximum value in the target range (0-255)
+        :return: A new RGBColor instance with remapped values
+        """
+
+        # first clamp the new range between 0-255
+        max_value = max(0, min(max_value, 255))
+
+        def remap_component(value: int) -> int:
+            # Convert from 0-255 range to 0-max_value range
+            return int((value / 255.0) * max_value)
+
+        return RGBColor(
+            red=remap_component(self.red),
+            green=remap_component(self.green),
+            blue=remap_component(self.blue),
+        )
+
+
+class NamedColor(Enum):
+    ALICEBLUE = RGBColor(red=240, green=248, blue=255)
+    ANTIQUEWHITE = RGBColor(red=250, green=235, blue=215)
+    AQUA = RGBColor(red=0, green=255, blue=255)
+    AQUAMARINE = RGBColor(red=127, green=255, blue=212)
+    AZURE = RGBColor(red=240, green=255, blue=255)
+    BEIGE = RGBColor(red=245, green=245, blue=220)
+    BISQUE = RGBColor(red=255, green=228, blue=196)
+    BLACK = RGBColor(red=0, green=0, blue=0)
+    BLANCHEDALMOND = RGBColor(red=255, green=235, blue=205)
+    BLUE = RGBColor(red=0, green=0, blue=255)
+    BLUEVIOLET = RGBColor(red=138, green=43, blue=226)
+    BROWN = RGBColor(red=165, green=42, blue=42)
+    BURLYWOOD = RGBColor(red=222, green=184, blue=135)
+    CADETBLUE = RGBColor(red=95, green=158, blue=160)
+    CHARTREUSE = RGBColor(red=127, green=255, blue=0)
+    CHOCOLATE = RGBColor(red=210, green=105, blue=30)
+    CORAL = RGBColor(red=255, green=127, blue=80)
+    CORNFLOWERBLUE = RGBColor(red=100, green=149, blue=237)
+    CORNSILK = RGBColor(red=255, green=248, blue=220)
+    CRIMSON = RGBColor(red=220, green=20, blue=60)
+    CYAN = RGBColor(red=0, green=255, blue=255)
+    DARKBLUE = RGBColor(red=0, green=0, blue=139)
+    DARKCYAN = RGBColor(red=0, green=139, blue=139)
+    DARKGOLDENROD = RGBColor(red=184, green=134, blue=11)
+    DARKGRAY = RGBColor(red=169, green=169, blue=169)
+    DARKGREY = RGBColor(red=169, green=169, blue=169)
+    DARKGREEN = RGBColor(red=0, green=100, blue=0)
+    DARKKHAKI = RGBColor(red=189, green=183, blue=107)
+    DARKMAGENTA = RGBColor(red=139, green=0, blue=139)
+    DARKOLIVEGREEN = RGBColor(red=85, green=107, blue=47)
+    DARKORANGE = RGBColor(red=255, green=140, blue=0)
+    DARKORCHID = RGBColor(red=153, green=50, blue=204)
+    DARKRED = RGBColor(red=139, green=0, blue=0)
+    DARKSALMON = RGBColor(red=233, green=150, blue=122)
+    DARKSEAGREEN = RGBColor(red=143, green=188, blue=143)
+    DARKSLATEBLUE = RGBColor(red=72, green=61, blue=139)
+    DARKSLATEGRAY = RGBColor(red=47, green=79, blue=79)
+    DARKSLATEGREY = RGBColor(red=47, green=79, blue=79)
+    DARKTURQUOISE = RGBColor(red=0, green=206, blue=209)
+    DARKVIOLET = RGBColor(red=148, green=0, blue=211)
+    DEEPPINK = RGBColor(red=255, green=20, blue=147)
+    DEEPSKYBLUE = RGBColor(red=0, green=191, blue=255)
+    DIMGRAY = RGBColor(red=105, green=105, blue=105)
+    DIMGREY = RGBColor(red=105, green=105, blue=105)
+    DODGERBLUE = RGBColor(red=30, green=144, blue=255)
+    FIREBRICK = RGBColor(red=178, green=34, blue=34)
+    FLORALWHITE = RGBColor(red=255, green=250, blue=240)
+    FORESTGREEN = RGBColor(red=34, green=139, blue=34)
+    FUCHSIA = RGBColor(red=255, green=0, blue=255)
+    GAINSBORO = RGBColor(red=220, green=220, blue=220)
+    GHOSTWHITE = RGBColor(red=248, green=248, blue=255)
+    GOLD = RGBColor(red=255, green=215, blue=0)
+    GOLDENROD = RGBColor(red=218, green=165, blue=32)
+    GRAY = RGBColor(red=128, green=128, blue=128)
+    GREY = RGBColor(red=128, green=128, blue=128)
+    GREEN = RGBColor(red=0, green=128, blue=0)
+    GREENYELLOW = RGBColor(red=173, green=255, blue=47)
+    HONEYDEW = RGBColor(red=240, green=255, blue=240)
+    HOTPINK = RGBColor(red=255, green=105, blue=180)
+    INDIANRED = RGBColor(red=205, green=92, blue=92)
+    INDIGO = RGBColor(red=75, green=0, blue=130)
+    IVORY = RGBColor(red=255, green=255, blue=240)
+    KHAKI = RGBColor(red=240, green=230, blue=140)
+    LAVENDER = RGBColor(red=230, green=230, blue=250)
+    LAVENDERBLUSH = RGBColor(red=255, green=240, blue=245)
+    LAWNGREEN = RGBColor(red=124, green=252, blue=0)
+    LEMONCHIFFON = RGBColor(red=255, green=250, blue=205)
+    LIGHTBLUE = RGBColor(red=173, green=216, blue=230)
+    LIGHTCORAL = RGBColor(red=240, green=128, blue=128)
+    LIGHTCYAN = RGBColor(red=224, green=255, blue=255)
+    LIGHTGOLDENRODYELLOW = RGBColor(red=250, green=250, blue=210)
+    LIGHTGRAY = RGBColor(red=211, green=211, blue=211)
+    LIGHTGREY = RGBColor(red=211, green=211, blue=211)
+    LIGHTGREEN = RGBColor(red=144, green=238, blue=144)
+    LIGHTPINK = RGBColor(red=255, green=182, blue=193)
+    LIGHTSALMON = RGBColor(red=255, green=160, blue=122)
+    LIGHTSEAGREEN = RGBColor(red=32, green=178, blue=170)
+    LIGHTSKYBLUE = RGBColor(red=135, green=206, blue=250)
+    LIGHTSLATEGRAY = RGBColor(red=119, green=136, blue=153)
+    LIGHTSLATEGREY = RGBColor(red=119, green=136, blue=153)
+    LIGHTSTEELBLUE = RGBColor(red=176, green=196, blue=222)
+    LIGHTYELLOW = RGBColor(red=255, green=255, blue=224)
+    LIME = RGBColor(red=0, green=255, blue=0)
+    LIMEGREEN = RGBColor(red=50, green=205, blue=50)
+    LINEN = RGBColor(red=250, green=240, blue=230)
+    MAGENTA = RGBColor(red=255, green=0, blue=255)
+    MAROON = RGBColor(red=128, green=0, blue=0)
+    MEDIUMAQUAMARINE = RGBColor(red=102, green=205, blue=170)
+    MEDIUMBLUE = RGBColor(red=0, green=0, blue=205)
+    MEDIUMORCHID = RGBColor(red=186, green=85, blue=211)
+    MEDIUMPURPLE = RGBColor(red=147, green=112, blue=216)
+    MEDIUMSEAGREEN = RGBColor(red=60, green=179, blue=113)
+    MEDIUMSLATEBLUE = RGBColor(red=123, green=104, blue=238)
+    MEDIUMSPRINGGREEN = RGBColor(red=0, green=250, blue=154)
+    MEDIUMTURQUOISE = RGBColor(red=72, green=209, blue=204)
+    MEDIUMVIOLETRED = RGBColor(red=199, green=21, blue=133)
+    MIDNIGHTBLUE = RGBColor(red=25, green=25, blue=112)
+    MINTCREAM = RGBColor(red=245, green=255, blue=250)
+    MISTYROSE = RGBColor(red=255, green=228, blue=225)
+    MOCCASIN = RGBColor(red=255, green=228, blue=181)
+    NAVAJOWHITE = RGBColor(red=255, green=222, blue=173)
+    NAVY = RGBColor(red=0, green=0, blue=128)
+    OLDLACE = RGBColor(red=253, green=245, blue=230)
+    OLIVE = RGBColor(red=128, green=128, blue=0)
+    OLIVEDRAB = RGBColor(red=107, green=142, blue=35)
+    ORANGE = RGBColor(red=255, green=165, blue=0)
+    ORANGERED = RGBColor(red=255, green=69, blue=0)
+    ORCHID = RGBColor(red=218, green=112, blue=214)
+    PALEGOLDENROD = RGBColor(red=238, green=232, blue=170)
+    PALEGREEN = RGBColor(red=152, green=251, blue=152)
+    PALETURQUOISE = RGBColor(red=175, green=238, blue=238)
+    PALEVIOLETRED = RGBColor(red=216, green=112, blue=147)
+    PAPAYAWHIP = RGBColor(red=255, green=239, blue=213)
+    PEACHPUFF = RGBColor(red=255, green=218, blue=185)
+    PERU = RGBColor(red=205, green=133, blue=63)
+    PINK = RGBColor(red=255, green=192, blue=203)
+    PLUM = RGBColor(red=221, green=160, blue=221)
+    POWDERBLUE = RGBColor(red=176, green=224, blue=230)
+    PURPLE = RGBColor(red=128, green=0, blue=128)
+    RED = RGBColor(red=255, green=0, blue=0)
+    ROSYBROWN = RGBColor(red=188, green=143, blue=143)
+    ROYALBLUE = RGBColor(red=65, green=105, blue=225)
+    SADDLEBROWN = RGBColor(red=139, green=69, blue=19)
+    SALMON = RGBColor(red=250, green=128, blue=114)
+    SANDYBROWN = RGBColor(red=244, green=164, blue=96)
+    SEAGREEN = RGBColor(red=46, green=139, blue=87)
+    SEASHELL = RGBColor(red=255, green=245, blue=238)
+    SIENNA = RGBColor(red=160, green=82, blue=45)
+    SILVER = RGBColor(red=192, green=192, blue=192)
+    SKYBLUE = RGBColor(red=135, green=206, blue=235)
+    SLATEBLUE = RGBColor(red=106, green=90, blue=205)
+    SLATEGRAY = RGBColor(red=112, green=128, blue=144)
+    SLATEGREY = RGBColor(red=112, green=128, blue=144)
+    SNOW = RGBColor(red=255, green=250, blue=250)
+    SPRINGGREEN = RGBColor(red=0, green=255, blue=127)
+    STEELBLUE = RGBColor(red=70, green=130, blue=180)
+    TAN = RGBColor(red=210, green=180, blue=140)
+    TEAL = RGBColor(red=0, green=128, blue=128)
+    THISTLE = RGBColor(red=216, green=191, blue=216)
+    TOMATO = RGBColor(red=255, green=99, blue=71)
+    TURQUOISE = RGBColor(red=64, green=224, blue=208)
+    VIOLET = RGBColor(red=238, green=130, blue=238)
+    WHEAT = RGBColor(red=245, green=222, blue=179)
+    WHITE = RGBColor(red=255, green=255, blue=255)
+    WHITESMOKE = RGBColor(red=245, green=245, blue=245)
+    YELLOW = RGBColor(red=255, green=255, blue=0)
+    YELLOWGREEN = RGBColor(red=154, green=205, blue=50)
 
     @classmethod
     def from_name(cls, name):
@@ -159,168 +272,3 @@ class ColorHex(Enum):
             return cls[name.upper()]
         except KeyError:
             raise ValueError(f"'{name}' is not defined as a named color.")
-
-
-def name_to_hex(name: str) -> str:
-    """
-    Convert a color name to a normalized hexadecimal color value.
-
-    The color name will be normalized to lower-case before being
-    looked up, and when no color of that name exists in the given
-    specification, ``ValueError`` is raised.
-
-    Examples:
-
-    >>> name_to_hex('white')
-    '#ffffff'
-    >>> name_to_hex('navy')
-    '#000080'
-    >>> name_to_hex('goldenrod')
-    '#daa520'
-    """
-    return ColorHex.from_name(name).value
-
-
-class ColorFormat(Enum):
-    RGB = auto()
-    HEX = auto()
-
-    @classmethod
-    def from_name(cls, name):
-        try:
-            return cls[name.upper()]
-        except KeyError:
-            raise ValueError(f"'{name}' is not a supported color format.")
-
-
-def normalize_hex(hex_value: str) -> str:
-    """
-    Normalize a hexadecimal color value to the following form and
-    return the result::
-
-        #[a-f0-9]{6}
-
-    In other words, the following transformations are applied as
-    needed:
-
-    * If the value contains only three hexadecimal digits, it is expanded to six.
-
-    * The value is normalized to lower-case.
-
-    If the supplied value cannot be interpreted as a hexadecimal color
-    value, ``ValueError`` is raised.
-
-    Examples:
-
-    >>> normalize_hex('#0099cc')
-    '#0099cc'
-    >>> normalize_hex('#0099CC')
-    '#0099cc'
-    >>> normalize_hex('#09c')
-    '#0099cc'
-    >>> normalize_hex('#09C')
-    '#0099cc'
-    >>> normalize_hex('0099cc')
-    Traceback (most recent call last):
-        ...
-    ValueError: '0099cc' is not a valid hexadecimal color value.
-
-    """
-    invalid_hex_value_msg = "'%s' is not a valid hexadecimal color value."
-    if not (hex_match := HEX_COLOR_RE.match(hex_value)):
-        raise ValueError(invalid_hex_value_msg % hex_value)
-    try:
-        hex_digits = hex_match.groups()[0]
-    except AttributeError:
-        raise ValueError("'%s' is not a valid hexadecimal color value." % hex_value)
-    if len(hex_digits) == 3:
-        hex_digits = "".join([2 * s for s in hex_digits])
-    return "#%s" % hex_digits.lower()
-
-
-def hex_to_rgb(hex_value: str) -> tuple[int, int, int]:
-    """
-    Convert a hexadecimal color value to a 3-tuple of integers
-    suitable for use in an ``rgb()`` triplet specifying that color.
-
-    The hexadecimal value will be normalized before being converted.
-
-    Examples:
-
-    >>> hex_to_rgb('#fff')
-    (255, 255, 255)
-    >>> hex_to_rgb('#000080')
-    (0, 0, 128)
-
-    """
-    hex_digits = normalize_hex(hex_value)
-    return int(hex_digits[1:3], 16), int(hex_digits[3:5], 16), int(hex_digits[5:7], 16)
-
-
-def name_to_rgb(name: str) -> tuple[int, int, int]:
-    """
-    Convert a color name to a 3-tuple of integers suitable for use in
-    an ``rgb()`` triplet specifying that color.
-
-    The color name will be normalized to lower-case before being
-    looked up, and when no color of that name exists in the given
-    specification, ``ValueError`` is raised.
-
-    Examples:
-
-    >>> name_to_rgb('white')
-    (255, 255, 255)
-    >>> name_to_rgb('navy')
-    (0, 0, 128)
-    >>> name_to_rgb('goldenrod')
-    (218, 165, 32)
-
-    """
-    return hex_to_rgb(name_to_hex(name))
-
-
-def remap(
-    value: int, left_min: int, left_max: int, right_min: int, right_max: int
-) -> int:
-    """
-    Remap a value from one range to another.
-    """
-    # TODO: decide if we should raise an exception if the value is outside the left range
-    # Figure out how 'wide' each range is
-    left_span = left_max - left_min
-    right_span = right_max - right_min
-
-    # Convert the left range into a 0-1 range (float)
-    value_scaled = float(value - left_min) / float(left_span)
-
-    # TODO: decide if we should use round() here, as int() will always round down
-    # Convert the 0-1 range into a value in the right range.
-    return int(right_min + (value_scaled * right_span))
-
-
-def remap_color(value: int, max_value: int) -> int:
-    return remap(value, 0, 255, 0, max_value)
-
-
-def remap_color_reverse(value: int, max_value: int) -> int:
-    return remap(value, 0, max_value, 0, 255)
-
-
-def remap_rgb_value(
-    rgb_val: tuple[int, int, int], max_value: int
-) -> tuple[int, int, int]:
-    return (
-        remap_color(rgb_val[0], max_value),
-        remap_color(rgb_val[1], max_value),
-        remap_color(rgb_val[2], max_value),
-    )
-
-
-def remap_rgb_value_reverse(
-    rgb_val: tuple[int, int, int], max_value: int
-) -> tuple[int, int, int]:
-    return (
-        remap_color_reverse(rgb_val[0], max_value),
-        remap_color_reverse(rgb_val[1], max_value),
-        remap_color_reverse(rgb_val[2], max_value),
-    )

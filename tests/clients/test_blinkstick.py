@@ -118,33 +118,6 @@ def test_get_variant_string(make_blinkstick, expected_variant, expected_name):
     assert bs.variant_string == expected_name
 
 
-def test_get_color_rgb_color_format(mocker: MockFixture, make_blinkstick):
-    """Test get_color with color_format='rgb'. We expect it to return the color in RGB format."""
-    bs = make_blinkstick()
-    mock_get_color_rgb = mocker.Mock(return_value=(255, 0, 0))
-    bs._get_color_rgb = mock_get_color_rgb
-    assert bs.get_color() == (255, 0, 0)
-    assert mock_get_color_rgb.call_count == 1
-
-
-def test_get_color_hex_color_format(mocker: MockFixture, make_blinkstick):
-    """Test get_color with color_format='hex'. We expect it to return the color in hex format."""
-    bs = make_blinkstick()
-    mock_get_color_hex = mocker.Mock(return_value="#ff0000")
-    bs._get_color_hex = mock_get_color_hex
-    assert bs.get_color(color_format="hex") == "#ff0000"
-    assert mock_get_color_hex.call_count == 1
-
-
-def test_get_color_invalid_color_format(mocker: MockFixture, make_blinkstick):
-    """Test get_color with invalid color_format. We expect it not to raise an exception, but to default to RGB."""
-    bs = make_blinkstick()
-    mock_get_color_rgb = mocker.Mock(return_value=(255, 0, 0))
-    bs._get_color_rgb = mock_get_color_rgb
-    bs.get_color(color_format="invalid_format")
-    assert mock_get_color_rgb.call_count == 1
-
-
 def test_max_rgb_value_default(make_blinkstick):
     """Test that the default max_rgb_value is 255."""
     bs = make_blinkstick()

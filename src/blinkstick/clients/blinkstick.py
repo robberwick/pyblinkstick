@@ -2,28 +2,20 @@ from __future__ import annotations
 
 import sys
 import time
-import warnings
-from typing import Callable
 
 from blinkstick.colors import (
-    hex_to_rgb,
-    name_to_rgb,
-    remap_rgb_value,
-    remap_rgb_value_reverse,
-    ColorFormat,
+    RGBColor,
+    NamedColor,
 )
-from blinkstick.decorators import no_backend_required
 from blinkstick.devices import BlinkStickDevice
 from blinkstick.enums import BlinkStickVariant, Mode
 from blinkstick.exceptions import NotConnected
-from blinkstick.utilities import string_to_info_block_data
+from blinkstick.utilities import string_to_info_block_data, convert_to_rgb_color
 
 if sys.platform == "win32":
     from blinkstick.backends.win32 import Win32Backend as USBBackend
 else:
     from blinkstick.backends.unix_like import UnixLikeBackend as USBBackend
-
-from random import randint
 
 """
 Main module to control BlinkStick and BlinkStick Pro devices.
@@ -166,50 +158,28 @@ class BlinkStick:
         self._error_reporting = error_reporting
 
     def set_color(
-        self,
-        channel: int = 0,
-        index: int = 0,
-        red: int = 0,
-        green: int = 0,
-        blue: int = 0,
-        name: str | None = None,
-        hex: str | None = None,
+        self, color: RGBColor | NamedColor | str, channel: int = 0, index: int = 0
     ) -> None:
         """
-        Set the color to the backend as RGB
-
-        @type  channel: int
-        @param channel: the channel which to send data to (R=0, G=1, B=2)
-        @type  index: int
-        @param index: the index of the LED
-        @type  red: int
-        @param red: Red color intensity 0 is off, 255 is full red intensity
-        @type  green: int
-        @param green: Green color intensity 0 is off, 255 is full green intensity
-        @type  blue: int
-        @param blue: Blue color intensity 0 is off, 255 is full blue intensity
-        @type  name: str
-        @param name: Use CSS color name as defined here: U{http://www.w3.org/TR/css3-color/}
-        @type  hex: str
-        @param hex: Specify color using hexadecimal color value e.g. '#FF3366'
+        Set the color to the backend. Color can be specified in the following formats:
+            - RGBColor object
+            - NamedColor object
+            - CSS color name as defined here: U{http://www.w3.org/TR/css3-color/}
+            - Hexadecimal color value in 3 or 6 digits, with or without a '#' prefix e.g. '#FF3366', 'FF3366', '#F3F', 'F3F'
         """
-
-        red, green, blue = self._determine_rgb(
-            red=red, green=green, blue=blue, name=name, hex=hex
-        )
-
-        r = int(round(red, 3))
-        g = int(round(green, 3))
-        b = int(round(blue, 3))
+        target_color = convert_to_rgb_color(color)
 
         if self._inverse:
-            r, g, b = 255 - r, 255 - g, 255 - b
+            # Inverse mode is enabled, so invert the color using the bitwise NOT operator (fancy!)
+            target_color = ~target_color
+
+        red, green, blue = target_color.remap_to_new_range(max_value=self.max_rgb_value)
 
         if index == 0 and channel == 0:
-            control_string = bytes(bytearray([0, r, g, b]))
+            control_string = bytes(bytearray([0, red, green, blue]))
             report_id = 0x0001
         else:
-            control_string = bytes(bytearray([5, channel, index, r, g, b]))
+            control_string = bytes(bytearray([5, channel, index, red, green, blue]))
             report_id = 0x0005
 
         if self._error_reporting:
@@ -220,107 +190,42 @@ class BlinkStick:
             except Exception:
                 pass
 
-    def _determine_rgb(
-        self,
-        red: int = 0,
-        green: int = 0,
-        blue: int = 0,
-        name: str | None = None,
-        hex: str | None = None,
-    ) -> tuple[int, int, int]:
-
-        try:
-            if name:
-                # Special case for name="random"
-                if name == "random":
-                    red = randint(0, 255)
-                    green = randint(0, 255)
-                    blue = randint(0, 255)
-                else:
-                    red, green, blue = name_to_rgb(name)
-            elif hex:
-                red, green, blue = hex_to_rgb(hex)
-        except ValueError:
-            red = green = blue = 0
-
-        red, green, blue = remap_rgb_value((red, green, blue), self._max_rgb_value)
-
-        # TODO - do smarts to determine input type from red var in case it is not int
-
-        return red, green, blue
-
-    def _get_color_rgb(self, index: int = 0) -> tuple[int, int, int]:
+    def _get_color(self, index: int = 0) -> RGBColor:
         if index == 0:
             device_bytes = self.backend.control_transfer(
                 0x80 | 0x20, 0x1, 0x0001, 0, 33
             )
             if self._inverse:
-                return (
-                    255 - device_bytes[1],
-                    255 - device_bytes[2],
-                    255 - device_bytes[3],
+                return RGBColor(
+                    red=255 - device_bytes[1],
+                    green=255 - device_bytes[2],
+                    blue=255 - device_bytes[3],
                 )
             else:
-                return device_bytes[1], device_bytes[2], device_bytes[3]
+                return RGBColor(
+                    red=device_bytes[1], green=device_bytes[2], blue=device_bytes[3]
+                )
         else:
             data = self.get_led_data((index + 1) * 3)
 
-            return data[index * 3 + 1], data[index * 3], data[index * 3 + 2]
+            return RGBColor(
+                red=data[index * 3 + 1], green=data[index * 3], blue=data[index * 3 + 2]
+            )
 
     def _get_color_hex(self, index: int = 0) -> str:
-        r, g, b = self._get_color_rgb(index)
-        return "#%02x%02x%02x" % (r, g, b)
+        return self._get_color(index=index).hex
 
     def get_color(
         self,
         index: int = 0,
-        color_mode: ColorFormat = ColorFormat.RGB,
-        color_format: str | None = None,
-    ) -> tuple[int, int, int] | str:
+    ) -> RGBColor:
         """
-                Get the current backend color in the defined format.
-
-                Currently supported formats:
-
-                    1. rgb (default) - Returns values as 3-tuple (r,g,b)
-                    2. hex - returns current backend color as hexadecimal string
-
-        import blinkstick.core            >>> b = blinkstick.core.find_first()
-                    >>> b.set_color(red=255,green=0,blue=0)
-                    >>> (r,g,b) = b.get_color() # Get color as rbg tuple
-                    (255,0,0)
-                    >>> hex = b.get_color(color_mode=ColorFormat.HEX) # Get color as hex string
-                    '#ff0000'
-
-                @type  index: int
-                @param index: the index of the LED
-                @type  color_mode: ColorFormat
-                @param color_mode: the format to return the color in (ColorFormat.RGB or ColorFormat.HEX) - defaults to ColorFormat.RGB
-                @type  color_format: str
-                @param color_format: "rgb" or "hex". Defaults to "rgb". Deprecated, use color_mode instead.
-
-                @rtype: (int, int, int) or str
-                @return: Either 3-tuple for R, G and B values, or hex string
+        Get the color of the LED at the specified index.
+        :param index:
+        :return:
         """
-        # color_format is deprecated, and color_mode should be used instead
-        # if color_format is specified, then raise a DeprecationWarning, but attempt to convert it to a ColorFormat enum
-        # if it's not possible, then default to ColorFormat.RGB, in line with the previous behavior
-        if color_format:
-            warnings.warn(
-                "color_format is deprecated, please use color_mode instead",
-                DeprecationWarning,
-            )
-            try:
-                color_mode = ColorFormat.from_name(color_format)
-            except ValueError:
-                color_mode = ColorFormat.RGB
 
-        color_funcs: dict[ColorFormat, Callable[[int], tuple[int, int, int] | str]] = {
-            ColorFormat.RGB: self._get_color_rgb,
-            ColorFormat.HEX: self._get_color_hex,
-        }
-
-        return color_funcs.get(color_mode, self._get_color_rgb)(index)
+        return self._get_color(index=index)
 
     def _determine_report_id(self, led_count: int) -> tuple[int, int]:
         report_id = 9
@@ -528,13 +433,13 @@ class BlinkStick:
         """
         Sets random color to the backend.
         """
-        self.set_color(name="random")
+        self.set_color(None)
 
     def turn_off(self) -> None:
         """
         Turns off LED.
         """
-        self.set_color()
+        self.set_color(None)
 
     def pulse(
         self,
@@ -634,96 +539,80 @@ class BlinkStick:
         for x in range(repeats):
             if x:
                 time.sleep(ms_delay)
-            self.set_color(
-                channel=channel,
-                index=index,
-                red=red,
-                green=green,
-                blue=blue,
-                name=name,
-                hex=hex,
-            )
+            self.set_color(None, channel=channel, index=index)
             time.sleep(ms_delay)
-            self.set_color(channel=channel, index=index)
+            self.set_color(None, channel=channel, index=index)
 
-    def morph(
-        self,
-        channel: int = 0,
-        index: int = 0,
-        red: int = 0,
-        green: int = 0,
-        blue: int = 0,
-        name: str | None = None,
-        hex: str | None = None,
-        duration: int = 1000,
-        steps: int = 50,
-    ) -> None:
-        """
-        Morph to the specified color.
-
-        @type  channel: int
-        @param channel: the channel which to send data to (R=0, G=1, B=2)
-        @type  index: int
-        @param index: the index of the LED
-        @type  red: int
-        @param red: Red color intensity 0 is off, 255 is full red intensity
-        @type  green: int
-        @param green: Green color intensity 0 is off, 255 is full green intensity
-        @type  blue: int
-        @param blue: Blue color intensity 0 is off, 255 is full blue intensity
-        @type  name: str
-        @param name: Use CSS color name as defined here: U{http://www.w3.org/TR/css3-color/}
-        @type  hex: str
-        @param hex: Specify color using hexadecimal color value e.g. '#FF3366'
-        @type  duration: int
-        @param duration: Duration for morph in milliseconds
-        @type  steps: int
-        @param steps: Number of gradient steps (default 50)
-        """
-
-        r_end, g_end, b_end = self._determine_rgb(
-            red=red, green=green, blue=blue, name=name, hex=hex
-        )
-        # descale the above values
-        r_end, g_end, b_end = remap_rgb_value_reverse(
-            (r_end, g_end, b_end), self._max_rgb_value
-        )
-
-        r_start, g_start, b_start = remap_rgb_value_reverse(
-            self._get_color_rgb(index), self._max_rgb_value
-        )
-
-        if r_start > 255 or g_start > 255 or b_start > 255:
-            r_start = 0
-            g_start = 0
-            b_start = 0
-
-        gradient = []
-
-        steps += 1
-        for n in range(1, steps):
-            d = 1.0 * n / steps
-            r = (r_start * (1 - d)) + (r_end * d)
-            g = (g_start * (1 - d)) + (g_end * d)
-            b = (b_start * (1 - d)) + (b_end * d)
-
-            gradient.append((r, g, b))
-
-        ms_delay = float(duration) / float(1000 * steps)
-
-        self.set_color(
-            channel=channel, index=index, red=r_start, green=g_start, blue=b_start
-        )
-
-        for grad in gradient:
-            grad_r, grad_g, grad_b = map(int, grad)
-
-            self.set_color(
-                channel=channel, index=index, red=grad_r, green=grad_g, blue=grad_b
-            )
-            time.sleep(ms_delay)
-
-        self.set_color(channel=channel, index=index, red=r_end, green=g_end, blue=b_end)
+    # def morph(
+    #     self,
+    #     channel: int = 0,
+    #     index: int = 0,
+    #     target_color: Color,
+    #     duration: int = 1000,
+    #     steps: int = 50,
+    # ) -> None:
+    #     """
+    #     Morph to the specified color.
+    #
+    #     @type  channel: int
+    #     @param channel: the channel which to send data to (R=0, G=1, B=2)
+    #     @type  index: int
+    #     @param index: the index of the LED
+    #     @type  red: int
+    #     @param red: Red color intensity 0 is off, 255 is full red intensity
+    #     @type  green: int
+    #     @param green: Green color intensity 0 is off, 255 is full green intensity
+    #     @type  blue: int
+    #     @param blue: Blue color intensity 0 is off, 255 is full blue intensity
+    #     @type  name: str
+    #     @param name: Use CSS color name as defined here: U{http://www.w3.org/TR/css3-color/}
+    #     @type  hex: str
+    #     @param hex: Specify color using hexadecimal color value e.g. '#FF3366'
+    #     @type  duration: int
+    #     @param duration: Duration for morph in milliseconds
+    #     @type  steps: int
+    #     @param steps: Number of gradient steps (default 50)
+    #     """
+    #
+    #     r_end, g_end, b_end = self._determine_rgb(
+    #         red=red, green=green, blue=blue, name=name, hex=hex
+    #     )
+    #     # descale the above values
+    #     r_end, g_end, b_end = remap_rgb_value_reverse(
+    #         (r_end, g_end, b_end), self._max_rgb_value
+    #     )
+    #
+    #     r_start, g_start, b_start = remap_rgb_value_reverse(
+    #         self._get_color(index), self._max_rgb_value
+    #     )
+    #
+    #     if r_start > 255 or g_start > 255 or b_start > 255:
+    #         r_start = 0
+    #         g_start = 0
+    #         b_start = 0
+    #
+    #     gradient = []
+    #
+    #     steps += 1
+    #     for n in range(1, steps):
+    #         d = 1.0 * n / steps
+    #         r = (r_start * (1 - d)) + (r_end * d)
+    #         g = (g_start * (1 - d)) + (g_end * d)
+    #         b = (b_start * (1 - d)) + (b_end * d)
+    #
+    #         gradient.append((r, g, b))
+    #
+    #     ms_delay = float(duration) / float(1000 * steps)
+    #
+    #     self.set_color(None, channel=channel, index=index)
+    #
+    #     for grad in gradient:
+    #         grad_r, grad_g, grad_b = map(int, grad)
+    #
+    #         self.set_color(None, channel=channel, index=index)
+    #         time.sleep(ms_delay)
+    #
+    #     self.set_color(None, channel=channel, index=index)
 
     @property
     def inverse(self) -> bool:
@@ -770,5 +659,6 @@ class BlinkStick:
         @param value: 0..255 maximum value for each R, G and B color
         """
         # convert to int and clamp to 0..255
+        # TODO remap current color immediately
         value = max(0, min(255, int(value)))
         self._max_rgb_value = value
