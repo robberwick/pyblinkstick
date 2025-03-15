@@ -4,7 +4,7 @@ from enum import Enum, auto
 HEX_COLOR_RE = re.compile(r"^#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})$")
 
 
-class Color(Enum):
+class ColorHex(Enum):
     ALICEBLUE = "#f0f8ff"
     ANTIQUEWHITE = "#faebd7"
     AQUA = "#00ffff"
@@ -178,7 +178,7 @@ def name_to_hex(name: str) -> str:
     >>> name_to_hex('goldenrod')
     '#daa520'
     """
-    return Color.from_name(name).value
+    return ColorHex.from_name(name).value
 
 
 class ColorFormat(Enum):

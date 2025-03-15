@@ -6,7 +6,7 @@ from blinkstick.colors import (
     remap_color_reverse,
     remap_rgb_value,
     remap_rgb_value_reverse,
-    Color,
+    ColorHex,
     name_to_hex,
     normalize_hex,
     hex_to_rgb,
@@ -124,25 +124,25 @@ def test_remap_rgb_value_reverse_above_maximum():
 
 
 def test_all_colors_present(w3c_colors):
-    assert len(w3c_colors) == len(Color)
+    assert len(w3c_colors) == len(ColorHex)
 
 
 def test_color_from_name_valid_color(w3c_colors):
     for color_name, _ in w3c_colors:
-        assert Color.from_name(color_name) == Color[color_name.upper()]
+        assert ColorHex.from_name(color_name) == ColorHex[color_name.upper()]
 
 
 def test_color_from_name_invalid_color():
     with pytest.raises(
         ValueError, match="'invalidcolor' is not defined as a named color."
     ):
-        Color.from_name("invalidcolor")
+        ColorHex.from_name("invalidcolor")
 
 
 def test_color_from_name_case_insensitive(w3c_colors):
     for color_name, _ in w3c_colors:
-        assert Color.from_name(color_name.upper()) == Color[color_name.upper()]
-        assert Color.from_name(color_name.lower()) == Color[color_name.upper()]
+        assert ColorHex.from_name(color_name.upper()) == ColorHex[color_name.upper()]
+        assert ColorHex.from_name(color_name.lower()) == ColorHex[color_name.upper()]
 
 
 def test_color_name_to_hex(w3c_colors):
