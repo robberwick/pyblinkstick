@@ -8,10 +8,7 @@ def string_to_info_block_data(data: str) -> bytes:
     @rtype: byte[32]
     @return: It fills the rest of bytes with zeros.
     """
-    info_block_data = data[:31]
-    byte_array = bytearray([1] + [0] * 31)
-
-    for i, c in enumerate(info_block_data):
-        byte_array[i + 1] = ord(c)
-
-    return bytes(byte_array)
+    max_buffer_size = 31  # 31 bytes for the string + 1 byte for the prefix
+    return bytearray([0x01]) + data.encode("utf-8")[:max_buffer_size].ljust(
+        max_buffer_size, b"\x00"
+    )
