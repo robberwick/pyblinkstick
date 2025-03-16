@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import sys
-import time
 
+from blinkstick.animation.animator import Animator
+from blinkstick.animation.blink import BlinkAnimation
+from blinkstick.animation.morph import MorphAnimation
+from blinkstick.animation.pulse import PulseAnimation
 from blinkstick.colors import (
     RGBColor,
     NamedColor,
@@ -51,6 +54,7 @@ class BlinkStick:
         self._error_reporting = error_reporting
         self._max_rgb_value = 255
         self._inverse = False
+        self.animator = Animator(self)
 
         if device:
             self.backend = USBBackend(device)
@@ -441,35 +445,24 @@ class BlinkStick:
         """
         self.set_color("black")
 
-    def pulse(
+    def morph(
         self,
         color: RGBColor | NamedColor | str,
         channel: int = 0,
         index: int = 0,
-        repeats: int = 1,
         duration: int = 1000,
         steps: int = 50,
+        immediate: bool = False,
     ) -> None:
         """
-        Morph to the specified color from black and back again.
+        Morph from the current color to the specified target color.
+        If immediate=True, cancel any running animations and start this one immediately.
         """
-        target_color = convert_to_rgb_color(color)
-        self.turn_off()
-        for x in range(repeats):
-            self.morph(
-                color=target_color,
-                channel=channel,
-                index=index,
-                duration=duration,
-                steps=steps,
-            )
-            self.morph(
-                color=RGBColor(red=0, green=0, blue=0),
-                channel=channel,
-                index=index,
-                duration=duration,
-                steps=steps,
-            )
+        animation = MorphAnimation(self, color, channel, index, duration, steps)
+        if immediate:
+            self.animator.animate_immediately(animation)
+        else:
+            self.animator.queue_animation(animation)
 
     def blink(
         self,
@@ -478,90 +471,44 @@ class BlinkStick:
         index: int = 0,
         repeats: int = 1,
         delay: int = 500,
+        immediate: bool = False,
     ) -> None:
         """
         Blink the specified color.
+        If immediate=True, cancel any running animations and start this one immediately.
         """
-        target_color = convert_to_rgb_color(color)
-        delay_sec = delay / 1000.0  # Convert ms to seconds
+        animation = BlinkAnimation(self, color, channel, index, repeats, delay)
+        if immediate:
+            self.animator.animate_immediately(animation)
+        else:
+            self.animator.queue_animation(animation)
 
-        for i in range(repeats):
-            # Add delay between blinks (except for first blink)
-            if i > 0:
-                time.sleep(delay_sec)
-
-            # Turn on LED with specified color
-            self.set_color(target_color, channel=channel, index=index)
-            time.sleep(delay_sec)
-            self.turn_off()
-
-    def morph(
+    def pulse(
         self,
         color: RGBColor | NamedColor | str,
         channel: int = 0,
         index: int = 0,
+        repeats: int = 1,
         duration: int = 1000,
         steps: int = 50,
+        immediate: bool = False,
     ) -> None:
         """
-        Morph from the current color to the specified target color.
-
-        @type  color: RGBColor, NamedColor, str
-        @param color: Color to morph to, can be RGBColor, NamedColor or string
-        @type  channel: int
-        @param channel: the channel which to send data to (R=0, G=1, B=2)
-        @type  index: int
-        @param index: the index of the LED
-        @type  red: int
-        @param red: Red color intensity 0 is off, 255 is full red intensity
-        @type  green: int
-        @param green: Green color intensity 0 is off, 255 is full green intensity
-        @type  blue: int
-        @param blue: Blue color intensity 0 is off, 255 is full blue intensity
-        @type  name: str
-        @param name: Use CSS color name as defined here: U{http://www.w3.org/TR/css3-color/}
-        @type  hex: str
-        @param hex: Specify color using hexadecimal color value e.g. '#FF3366'
-        @type  duration: int
-        @param duration: Total time of the animation in milliseconds
-        @type  steps: int
-        @param steps: Number of steps for the animation
+        Pulse the specified color.
+        If immediate=True, cancel any running animations and start this one immediately.
         """
-        # Get current color
-        current_color = self.get_color(index=index)
-
-        # Determine target color
         target_color = convert_to_rgb_color(color)
+        animation = PulseAnimation(
+            self, target_color, channel, index, repeats, duration, steps
+        )
+        if immediate:
+            self.animator.animate_immediately(animation)
+        else:
+            self.animator.queue_animation(animation)
 
-        # Calculate time per step in seconds
-        step_time = duration / steps / 1000
-
-        # Calculate color increments
-        red_step = (target_color.red - current_color.red) / steps
-        green_step = (target_color.green - current_color.green) / steps
-        blue_step = (target_color.blue - current_color.blue) / steps
-
-        # Perform the morph
-        for step in range(steps + 1):
-            # Calculate intermediate color
-            red = int(current_color.red + red_step * step)
-            green = int(current_color.green + green_step * step)
-            blue = int(current_color.blue + blue_step * step)
-
-            # Ensure values are in valid range (0-255)
-            red = max(0, min(255, red))
-            green = max(0, min(255, green))
-            blue = max(0, min(255, blue))
-
-            # Create intermediate color
-            intermediate_color = RGBColor(red=red, green=green, blue=blue)
-
-            # Set the color
-            self.set_color(intermediate_color, channel=channel, index=index)
-
-            # Wait before next step (skip wait on last step)
-            if step < steps:
-                time.sleep(step_time)
+    def stop_animations(self) -> None:
+        """Stop all running and queued animations"""
+        self.animator.stop()
 
     @property
     def inverse(self) -> bool:
