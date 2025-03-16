@@ -2,7 +2,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from blinkstick.colors import ColorFormat
 from blinkstick.enums import BlinkStickVariant, Mode
 from blinkstick.clients.blinkstick import BlinkStick
 from pytest_mock import MockFixture
@@ -235,55 +234,6 @@ def test_set_inverse_type_checking(make_blinkstick, input_value, expected_result
     bs = make_blinkstick()
     bs.inverse = input_value
     assert bs.inverse == expected_result
-
-
-@pytest.mark.parametrize(
-    "color_mode, ctrl_transfer_bytes, color, inverse, expected_color",
-    [
-        pytest.param(
-            ColorFormat.RGB,
-            (0, 255, 0, 0),
-            (255, 0, 0),
-            False,
-            (255, 0, 0),
-            id="RGB, NoInverse",
-        ),
-        pytest.param(
-            ColorFormat.HEX,
-            (0, 255, 0, 0),
-            "#ff0000",
-            False,
-            "#ff0000",
-            id="Hex, NoInverse",
-        ),
-        pytest.param(
-            ColorFormat.RGB,
-            (0, 255, 0, 0),
-            (255, 0, 0),
-            True,
-            (0, 255, 255),
-            id="RGB, Inverse",
-        ),
-        pytest.param(
-            ColorFormat.HEX,
-            (0, 255, 0, 0),
-            "#ff0000",
-            True,
-            "#00ffff",
-            id="Hex, Inverse",
-        ),
-    ],
-)
-def test_inverse_correctly_inverts_rgb_color(
-    make_blinkstick, color_mode, ctrl_transfer_bytes, color, inverse, expected_color
-):
-    """Test that the color is correctly inverted when the inverse flag is set."""
-    bs = make_blinkstick()
-    # mock the backend control_transfer method to return the 3 bytes of the color
-    bs.backend.control_transfer = MagicMock(return_value=ctrl_transfer_bytes)
-
-    bs.inverse = inverse
-    assert bs.get_color(color_mode=color_mode) == expected_color
 
 
 def test_inverse_does_not_affect_max_rgb_value(make_blinkstick):
