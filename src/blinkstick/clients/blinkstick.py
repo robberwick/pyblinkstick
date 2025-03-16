@@ -443,79 +443,71 @@ class BlinkStick:
 
     def pulse(
         self,
+        color: RGBColor | NamedColor | str,
         channel: int = 0,
         index: int = 0,
-        red: int = 0,
-        green: int = 0,
-        blue: int = 0,
-        name: str | None = None,
-        hex: str | None = None,
         repeats: int = 1,
         duration: int = 1000,
         steps: int = 50,
     ) -> None:
         """
         Morph to the specified color from black and back again.
-
-        @type  channel: int
-        @param channel: the channel which to send data to (R=0, G=1, B=2)
-        @type  index: int
-        @param index: the index of the LED
-        @type  red: int
-        @param red: Red color intensity 0 is off, 255 is full red intensity
-        @type  green: int
-        @param green: Green color intensity 0 is off, 255 is full green intensity
-        @type  blue: int
-        @param blue: Blue color intensity 0 is off, 255 is full blue intensity
-        @type  name: str
-        @param name: Use CSS color name as defined here: U{http://www.w3.org/TR/css3-color/}
-        @type  hex: str
-        @param hex: Specify color using hexadecimal color value e.g. '#FF3366'
-        @type  repeats: int
-        @param repeats: Number of times to pulse the LED
-        @type  duration: int
-        @param duration: Duration for pulse in milliseconds
-        @type  steps: int
-        @param steps: Number of gradient steps
         """
+        target_color = convert_to_rgb_color(color)
         self.turn_off()
         for x in range(repeats):
             self.morph(
+                color=target_color,
                 channel=channel,
                 index=index,
-                red=red,
-                green=green,
-                blue=blue,
-                name=name,
-                hex=hex,
                 duration=duration,
                 steps=steps,
             )
             self.morph(
+                color=RGBColor(red=0, green=0, blue=0),
                 channel=channel,
                 index=index,
-                red=0,
-                green=0,
-                blue=0,
                 duration=duration,
                 steps=steps,
             )
 
     def blink(
         self,
+        color: RGBColor | NamedColor | str,
         channel: int = 0,
         index: int = 0,
-        red: int = 0,
-        green: int = 0,
-        blue: int = 0,
-        name: str | None = None,
-        hex: str | None = None,
         repeats: int = 1,
         delay: int = 500,
     ) -> None:
         """
         Blink the specified color.
+        """
+        target_color = convert_to_rgb_color(color)
+        delay_sec = delay / 1000.0  # Convert ms to seconds
 
+        for i in range(repeats):
+            # Add delay between blinks (except for first blink)
+            if i > 0:
+                time.sleep(delay_sec)
+
+            # Turn on LED with specified color
+            self.set_color(target_color, channel=channel, index=index)
+            time.sleep(delay_sec)
+            self.turn_off()
+
+    def morph(
+        self,
+        color: RGBColor | NamedColor | str,
+        channel: int = 0,
+        index: int = 0,
+        duration: int = 1000,
+        steps: int = 50,
+    ) -> None:
+        """
+        Morph from the current color to the specified target color.
+
+        @type  color: RGBColor, NamedColor, str
+        @param color: Color to morph to, can be RGBColor, NamedColor or string
         @type  channel: int
         @param channel: the channel which to send data to (R=0, G=1, B=2)
         @type  index: int
@@ -530,89 +522,46 @@ class BlinkStick:
         @param name: Use CSS color name as defined here: U{http://www.w3.org/TR/css3-color/}
         @type  hex: str
         @param hex: Specify color using hexadecimal color value e.g. '#FF3366'
-        @type  repeats: int
-        @param repeats: Number of times to pulse the LED
-        @type  delay: int
-        @param delay: time in milliseconds to light LED for, and also between blinks
+        @type  duration: int
+        @param duration: Total time of the animation in milliseconds
+        @type  steps: int
+        @param steps: Number of steps for the animation
         """
-        ms_delay = float(delay) / float(1000)
-        for x in range(repeats):
-            if x:
-                time.sleep(ms_delay)
-            self.set_color(None, channel=channel, index=index)
-            time.sleep(ms_delay)
-            self.set_color(None, channel=channel, index=index)
+        # Get current color
+        current_color = self.get_color(index=index)
 
-    # def morph(
-    #     self,
-    #     channel: int = 0,
-    #     index: int = 0,
-    #     target_color: Color,
-    #     duration: int = 1000,
-    #     steps: int = 50,
-    # ) -> None:
-    #     """
-    #     Morph to the specified color.
-    #
-    #     @type  channel: int
-    #     @param channel: the channel which to send data to (R=0, G=1, B=2)
-    #     @type  index: int
-    #     @param index: the index of the LED
-    #     @type  red: int
-    #     @param red: Red color intensity 0 is off, 255 is full red intensity
-    #     @type  green: int
-    #     @param green: Green color intensity 0 is off, 255 is full green intensity
-    #     @type  blue: int
-    #     @param blue: Blue color intensity 0 is off, 255 is full blue intensity
-    #     @type  name: str
-    #     @param name: Use CSS color name as defined here: U{http://www.w3.org/TR/css3-color/}
-    #     @type  hex: str
-    #     @param hex: Specify color using hexadecimal color value e.g. '#FF3366'
-    #     @type  duration: int
-    #     @param duration: Duration for morph in milliseconds
-    #     @type  steps: int
-    #     @param steps: Number of gradient steps (default 50)
-    #     """
-    #
-    #     r_end, g_end, b_end = self._determine_rgb(
-    #         red=red, green=green, blue=blue, name=name, hex=hex
-    #     )
-    #     # descale the above values
-    #     r_end, g_end, b_end = remap_rgb_value_reverse(
-    #         (r_end, g_end, b_end), self._max_rgb_value
-    #     )
-    #
-    #     r_start, g_start, b_start = remap_rgb_value_reverse(
-    #         self._get_color(index), self._max_rgb_value
-    #     )
-    #
-    #     if r_start > 255 or g_start > 255 or b_start > 255:
-    #         r_start = 0
-    #         g_start = 0
-    #         b_start = 0
-    #
-    #     gradient = []
-    #
-    #     steps += 1
-    #     for n in range(1, steps):
-    #         d = 1.0 * n / steps
-    #         r = (r_start * (1 - d)) + (r_end * d)
-    #         g = (g_start * (1 - d)) + (g_end * d)
-    #         b = (b_start * (1 - d)) + (b_end * d)
-    #
-    #         gradient.append((r, g, b))
-    #
-    #     ms_delay = float(duration) / float(1000 * steps)
-    #
-    #     self.set_color(None, channel=channel, index=index)
-    #
-    #     for grad in gradient:
-    #         grad_r, grad_g, grad_b = map(int, grad)
-    #
-    #         self.set_color(None, channel=channel, index=index)
-    #         time.sleep(ms_delay)
-    #
-    #     self.set_color(None, channel=channel, index=index)
+        # Determine target color
+        target_color = convert_to_rgb_color(color)
+
+        # Calculate time per step in seconds
+        step_time = duration / steps / 1000
+
+        # Calculate color increments
+        red_step = (target_color.red - current_color.red) / steps
+        green_step = (target_color.green - current_color.green) / steps
+        blue_step = (target_color.blue - current_color.blue) / steps
+
+        # Perform the morph
+        for step in range(steps + 1):
+            # Calculate intermediate color
+            red = int(current_color.red + red_step * step)
+            green = int(current_color.green + green_step * step)
+            blue = int(current_color.blue + blue_step * step)
+
+            # Ensure values are in valid range (0-255)
+            red = max(0, min(255, red))
+            green = max(0, min(255, green))
+            blue = max(0, min(255, blue))
+
+            # Create intermediate color
+            intermediate_color = RGBColor(red=red, green=green, blue=blue)
+
+            # Set the color
+            self.set_color(intermediate_color, channel=channel, index=index)
+
+            # Wait before next step (skip wait on last step)
+            if step < steps:
+                time.sleep(step_time)
 
     @property
     def inverse(self) -> bool:
