@@ -433,13 +433,13 @@ class BlinkStick:
         """
         Sets random color to the backend.
         """
-        self.set_color(None)
+        self.set_color("random")
 
     def turn_off(self) -> None:
         """
         Turns off LED.
         """
-        self.set_color(None)
+        self.set_color("black")
 
     def pulse(
         self,
