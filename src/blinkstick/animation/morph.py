@@ -1,11 +1,21 @@
 import time
 
+from blinkstick.clients import BlinkStick
 from blinkstick.animation.base import Animation, AnimationState
 from blinkstick.colors import RGBColor
+from blinkstick.enums import Channel
 
 
 class MorphAnimation(Animation):
-    def __init__(self, blinkstick, color, channel=0, index=0, duration=1000, steps=50):
+    def __init__(
+        self,
+        blinkstick: BlinkStick,
+        color: RGBColor,
+        channel: Channel = Channel.RED,
+        index: int = 0,
+        duration: int = 1000,
+        steps: int = 50,
+    ):
         super().__init__(blinkstick, color, channel, index)
         self.duration = duration
         self.steps = steps

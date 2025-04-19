@@ -11,7 +11,7 @@ from blinkstick.colors import (
     NamedColor,
 )
 from blinkstick.devices import BlinkStickDevice
-from blinkstick.enums import BlinkStickVariant, Mode
+from blinkstick.enums import BlinkStickVariant, Mode, Channel
 from blinkstick.exceptions import NotConnected
 from blinkstick.utilities import string_to_info_block_data, convert_to_rgb_color
 
@@ -162,7 +162,7 @@ class BlinkStick:
         self._error_reporting = error_reporting
 
     def set_color(
-        self, color: RGBColor | NamedColor | str, channel: int = 0, index: int = 0
+        self, color: RGBColor | NamedColor | str, channel: Channel = Channel.RED, index: int = 0
     ) -> None:
         """
         Set the color to the backend. Color can be specified in the following formats:
@@ -250,7 +250,7 @@ class BlinkStick:
 
         return report_id, max_leds
 
-    def set_led_data(self, channel: int, data: list[int]) -> None:
+    def set_led_data(self, channel: Channel, data: list[int]) -> None:
         """
         Send LED data frame.
 
@@ -448,7 +448,7 @@ class BlinkStick:
     def morph(
         self,
         color: RGBColor | NamedColor | str,
-        channel: int = 0,
+        channel: Channel = Channel.RED,
         index: int = 0,
         duration: int = 1000,
         steps: int = 50,
@@ -467,7 +467,7 @@ class BlinkStick:
     def blink(
         self,
         color: RGBColor | NamedColor | str,
-        channel: int = 0,
+        channel: Channel = Channel.RED,
         index: int = 0,
         repeats: int = 1,
         delay: int = 500,
@@ -486,7 +486,7 @@ class BlinkStick:
     def pulse(
         self,
         color: RGBColor | NamedColor | str,
-        channel: int = 0,
+        channel: Channel = Channel.RED,
         index: int = 0,
         repeats: int = 1,
         duration: int = 1000,

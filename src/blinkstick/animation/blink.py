@@ -1,10 +1,21 @@
 import time
 
+from blinkstick.clients import BlinkStick
 from blinkstick.animation.base import Animation, AnimationState
+from blinkstick.colors import RGBColor
+from blinkstick.enums import Channel
 
 
 class BlinkAnimation(Animation):
-    def __init__(self, blinkstick, color, channel=0, index=0, repeats=1, delay=500):
+    def __init__(
+        self,
+        blinkstick: BlinkStick,
+        color: RGBColor,
+        channel: Channel = Channel.RED,
+        index: int = 0,
+        repeats: int = 1,
+        delay: int = 500,
+    ):
         super().__init__(blinkstick, color, channel, index)
         self.repeats = repeats
         self.delay_sec = delay / 1000.0

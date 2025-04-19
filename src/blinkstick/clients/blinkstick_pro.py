@@ -4,6 +4,7 @@ import time
 
 from blinkstick.clients import BlinkStick
 from blinkstick.colors import remap_color
+from blinkstick.enums import Channel
 
 
 class BlinkStickPro:
@@ -108,7 +109,7 @@ class BlinkStickPro:
 
         self.data[channel][index] = [g, r, b]
 
-    def get_color(self, channel: int, index: int) -> tuple[int, int, int]:
+    def get_color(self, channel: Channel, index: int) -> tuple[int, int, int]:
         """
         Get the current color of a single pixel.
 
@@ -163,7 +164,7 @@ class BlinkStickPro:
 
         return self.bstick is not None
 
-    def send_data(self, channel: int) -> None:
+    def send_data(self, channel: Channel) -> None:
         """
         Send data stored in the internal buffer to the channel.
 

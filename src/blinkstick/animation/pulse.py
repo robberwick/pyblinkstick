@@ -1,11 +1,20 @@
+from blinkstick.clients import BlinkStick
 from blinkstick.animation.base import Animation, AnimationState
 from blinkstick.animation.morph import MorphAnimation
 from blinkstick.colors import RGBColor
+from blinkstick.enums import Channel
 
 
 class PulseAnimation(Animation):
     def __init__(
-        self, blinkstick, color, channel=0, index=0, repeats=1, duration=1000, steps=50
+        self,
+        blinkstick: BlinkStick,
+        color: RGBColor,
+        channel: Channel = Channel.RED,
+        index: int = 0,
+        repeats: int = 1,
+        duration: int = 1000,
+        steps: int = 50,
     ):
         super().__init__(blinkstick, color, channel, index)
         self.repeats = repeats

@@ -44,3 +44,9 @@ class Mode(IntEnum):
     RGB = 1
     RGB_INVERSE = 2
     ADDRESSABLE = 3
+
+
+class Channel(IntEnum):
+    RED = 0
+    GREEN = 1
+    BLUE = 2
