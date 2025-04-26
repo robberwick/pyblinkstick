@@ -1,3 +1,19 @@
+"""
+The BlinkStick package provides a Python interface for controlling BlinkStick USB LED devices.
+
+This package includes:
+- Device discovery and connection management
+- RGB and named color support
+- Animation system for creating dynamic lighting effects
+- Support for different BlinkStick variants and channels
+
+Main Components:
+- clients: Different client implementations for BlinkStick device control
+- colors: Color management with RGB and named color support
+- animation: Framework for creating and managing LED animations
+- core: Core functionality for device discovery and management
+"""
+
 from importlib.metadata import version, PackageNotFoundError
 
 from blinkstick.clients import BlinkStick

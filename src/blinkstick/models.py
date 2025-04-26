@@ -7,13 +7,17 @@ class SerialDetails:
     """
     A BlinkStick serial number representation.
 
+    The format for serial numbers is:
+
+    .. code-block::
+
         BSnnnnnn-1.0
         ||  |    | |- Software minor version
         ||  |    |--- Software major version
         ||  |-------- Denotes sequential number
         ||----------- Denotes BlinkStick backend
 
-
+    :raises ValueError: If the provided serial number does not match expected format
     """
 
     serial: str

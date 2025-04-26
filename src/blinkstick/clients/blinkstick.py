@@ -1,28 +1,13 @@
+"""
+This module provides the primary BlinkStick client implementation for controlling BlinkStick devices.
+
+The BlinkStick class serves as the main interface for interacting with physical BlinkStick
+devices, allowing users to control LED colors, modes, and other device functionalities.
+"""
+
 from __future__ import annotations
 
-import sys
-
-from blinkstick.animation.animator import Animator
-from blinkstick.animation.blink import BlinkAnimation
-from blinkstick.animation.morph import MorphAnimation
-from blinkstick.animation.pulse import PulseAnimation
-from blinkstick.colors import (
-    RGBColor,
-    NamedColor,
-)
-from blinkstick.devices import BlinkStickDevice
-from blinkstick.enums import BlinkStickVariant, Mode, Channel
-from blinkstick.exceptions import NotConnected
-from blinkstick.utilities import string_to_info_block_data, convert_to_rgb_color
-
-if sys.platform == "win32":
-    from blinkstick.backends.win32 import Win32Backend as USBBackend
-else:
-    from blinkstick.backends.unix_like import UnixLikeBackend as USBBackend
-
-"""
-Main module to control BlinkStick and BlinkStick Pro devices.
-"""
+from blinkstick.clients.base import BlinkStickClientBase
 
 
 class BlinkStick:

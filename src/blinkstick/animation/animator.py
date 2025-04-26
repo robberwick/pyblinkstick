@@ -1,3 +1,46 @@
+"""
+Thread-safe LED animation system for BlinkStick devices.
+
+This module provides a robust implementation for managing LED animations using a
+producer-consumer pattern. The system ensures reliable operation through proper
+thread synchronization and resource management.
+
+Components:
+    - Animator: Core class that manages the animation lifecycle
+    - Animation Queue: Thread-safe FIFO queue for sequential processing
+    - Worker Thread: Background daemon thread for animation execution
+    - Thread Safety: Proper synchronization using Queue and RLock
+    - Resource Management: Cleanup and cancellation handling
+
+Features:
+    - Non-blocking animation execution
+    - Sequential animation processing
+    - Thread-safe operations
+    - Immediate animation interruption
+    - Graceful shutdown support
+
+Example:
+    from blinkstick.animation import Animator
+    from blinkstick.animation.blink import BlinkAnimation
+    from blinkstick.colors import RGBColor
+
+    # Create animator
+    animator = Animator(device)
+
+    # Queue animation
+    blink = BlinkAnimation(
+        device,
+        RGBColor(255, 0, 0),  # Red color
+        repeats=3             # Blink 3 times
+    )
+    animator.queue_animation(blink)
+
+    # Cleanup
+    animator.stop()
+"""
+
+from __future__ import annotations
+
 import queue
 import threading
 import time

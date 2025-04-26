@@ -1,3 +1,12 @@
+"""
+This module provides color morphing animation functionality for BlinkStick devices.
+
+It contains the MorphAnimation class which enables smooth color transitions
+between different RGB values over a specified duration.
+"""
+
+from __future__ import annotations
+
 import time
 
 from blinkstick.clients import BlinkStick
@@ -7,6 +16,14 @@ from blinkstick.enums import Channel
 
 
 class MorphAnimation(Animation):
+    """
+    Implements a smooth color transition animation for BlinkStick devices.
+
+    This animation gradually changes the LED color from its current value
+    to a target color over a specified duration, creating a smooth morphing effect.
+    The transition is broken down into smaller steps for smoother appearance.
+    """
+
     def __init__(
         self,
         blinkstick: BlinkStick,
@@ -16,11 +33,29 @@ class MorphAnimation(Animation):
         duration: int = 1000,
         steps: int = 50,
     ):
+        """
+        Initialize a new color morphing animation.
+
+        :param blinkstick: The BlinkStick device to control
+        :param color: Target RGB color to morph to
+        :param channel: Color channel to use (default: RED)
+        :param index: LED index to animate (default: 0)
+        :param duration: Total animation duration in milliseconds (default: 1000)
+        :param steps: Number of intermediate steps for the transition (default: 50)
+        """
         super().__init__(blinkstick, color, channel, index)
         self.duration = duration
         self.steps = steps
 
     def run(self) -> None:
+        """
+        Execute the morphing animation.
+
+        Gradually transitions the LED color from its current value to the target color
+        over the specified duration. The transition is broken into steps, with each step
+        updating the color values proportionally. The animation can be cancelled mid-execution
+        by setting the is_cancelled flag.
+        """
         self.state = AnimationState.RUNNING
         current_color = self.blinkstick.get_color(index=self.index)
 
