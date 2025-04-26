@@ -13,11 +13,19 @@ HEX_COLOR_PATTERN = re.compile(r"^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{6}$")
 @dataclass()
 class RGBColor:
     """
-    A color representation.
+    Representation of an RGB color.
 
-    :param red: Red component of the color (0-255)
-    :param green: Green component of the color (0-255)
-    :param blue: Blue component of the color (0-255)
+    This class provides functionality for manipulating RGB colors, including conversion between color
+    representations (e.g., RGB to hex), color inversion, random color generation, and remapping color
+    components to fit within a specified range. The class also ensures that RGB values remain within the
+    valid range of 0 to 255.
+
+    :ivar red: The red component of the color.
+    :type red: int
+    :ivar green: The green component of the color.
+    :type green: int
+    :ivar blue: The blue component of the color.
+    :type blue: int
     """
 
     red: int = 0
@@ -26,8 +34,11 @@ class RGBColor:
 
     def __post_init__(self):
         """
-        Post-initialization processing to set color values.
-        :return:
+        Validates that the RGB color values are within the acceptable range (0-255)
+        after the object is initialized. If not, raises an exception.
+
+        :raises RGBColorException: If any of the red, green, or blue values are
+            outside the range [0, 255].
         """
 
         if not all(0 <= value <= 255 for value in (self.red, self.green, self.blue)):
@@ -36,13 +47,26 @@ class RGBColor:
     @property
     def hex(self) -> str:
         """
-        Convert the Color object to a hex color string.
+        Converts RGB color representation to its hexadecimal string format.
+
+        The method takes the `red`, `green`, and `blue` attributes of the object,
+        formats them as two-digit hexadecimal numbers, and returns the concatenated
+        hexadecimal color code prefixed with a `#`.
+
+        :return: Hexadecimal representation of the RGB color.
+        :rtype: str
         """
         return f"#{self.red:02x}{self.green:02x}{self.blue:02x}"
 
     def __iter__(self):
         """
-        Iterate over the color components.
+        Provides an iterator over the color components of the object.
+
+        This method enables the object to be an iterable, yielding its color components
+        (red, green, and blue) in sequence.
+
+        :return: Yields the red, green, and blue components of the object
+        :rtype: iterator
         """
         yield self.red
         yield self.green
@@ -50,7 +74,11 @@ class RGBColor:
 
     def __invert__(self):
         """
-        Invert the color.
+        Inverts the RGB color values of the current instance, producing the complementary color.
+        Each color channel (red, green, blue) is inverted by subtracting its value from 255.
+
+        :return: A new `RGBColor` instance with inverted color channel values.
+        :rtype: RGBColor
         """
         return RGBColor(
             red=255 - self.red,
@@ -59,9 +87,28 @@ class RGBColor:
         )
 
     @classmethod
-    def from_hex(cls, hex_color: str):
+    def from_hex(cls, hex_color: str) -> RGBColor:
         """
-        Create a Color object from a hex color string.
+        Creates an instance of RGBColor from a hexadecimal color string.
+
+        This method parses a hex color string, validates its format, and converts it
+        into an RGB color representation. The input can be in either 3-character
+        shorthand form (e.g., '#RGB') or 6-character form (e.g., '#RRGGBB'). It
+        automatically handles the removal of the leading '#' character if present
+        and expands shorthand notation to full 6-character representation before
+        processing.
+
+        :param hex_color: Hexadecimal color string to be converted. Must be a valid
+            3-character (#RGB) or 6-character (#RRGGBB) hex color, optionally
+            starting with '#'.
+        :type hex_color: str
+
+        :raises RGBColorException: If the input string does not conform to the 3
+            or 6 character hexadecimal color format.
+
+        :return: An instance of RGBColor initialized with the parsed RGB values
+            (red, green, blue).
+        :rtype: RGBColor
         """
         # Remove leading '#' if present
         if hex_color.startswith("#"):
@@ -82,9 +129,17 @@ class RGBColor:
         )
 
     @classmethod
-    def random(cls):
+    def random(cls) -> RGBColor:
         """
-        Generate a random color.
+        Generates a new instance of the class with randomized RGB color values.
+
+        This class method creates a color instance where each of the red, green,
+        and blue components is assigned a random integer value between 0 and 255,
+        inclusive. The method uses Python's `random.randint` function to ensure
+        each component lies within the acceptable range for RGB colors.
+
+        :return: A new instance of the class with randomized RGB components.
+        :rtype: RGBColor
         """
         return cls(
             red=random.randint(0, 255),
@@ -92,15 +147,19 @@ class RGBColor:
             blue=random.randint(0, 255),
         )
 
-    def remap_to_new_range(self, max_value: int) -> "RGBColor":
+    def remap_to_new_range(self, max_value: int) -> RGBColor:
         """
-        Remap the RGB color components and return a new RGBColor instance.
+        Remaps the current RGB color components from their original range (0-255)
+        to a new range (0 to `max_value`), ensuring that the result respects the
+        defined range boundaries.
 
-        Note: The returned color will have values outside the standard 0-255 range,
-        so it may not validate correctly when used with other methods.
-
-        :param max_value: The maximum value in the target range (0-255)
-        :return: A new RGBColor instance with remapped values
+        :param max_value: The maximum value for the new range to which the RGB
+            components will be remapped. Clamped between 0 and 255.
+        :type max_value: int
+        :raises ValueError: If the remapping calculations fail unexpectedly.
+        :return: Returns a new RGBColor object with its red, green, and blue
+            components remapped to the specified range.
+        :rtype: RGBColor
         """
 
         # first clamp the new range between 0-255
@@ -115,6 +174,21 @@ class RGBColor:
             green=remap_component(self.green),
             blue=remap_component(self.blue),
         )
+
+    def packet_data(self) -> tuple[int, int, int]:
+        """
+        Retrieves the RGB packet data as a tuple.
+
+        This method consolidates the red, green, and blue color component
+        values into a single tuple. These values can represent colors in
+        an RGB color model, commonly used in graphics, displays, and other
+        visualization contexts.
+
+        :return: A tuple containing the green, red, and blue color values
+                 respectively.
+        :rtype: tuple[int, int, int]
+        """
+        return self.green, self.red, self.blue
 
 
 class NamedColor(Enum):
@@ -267,7 +341,22 @@ class NamedColor(Enum):
     YELLOWGREEN = RGBColor(red=154, green=205, blue=50)
 
     @classmethod
-    def from_name(cls, name):
+    def from_name(cls, name) -> NamedColor:
+        """
+        Creates an instance of the class based on the provided name. The method attempts
+        to map the given name to a corresponding enumeration value, ignoring case. If
+        no match is found, an error is raised.
+
+        :param name: The name of the color to map to an enumeration value. It is
+            case-insensitive.
+        :type name: str
+
+        :raises ValueError: If the provided name does not correspond to any defined
+            named color.
+
+        :return: An instance of the class corresponding to the provided name.
+        :rtype: NamedColor
+        """
         try:
             return cls[name.upper()]
         except KeyError:

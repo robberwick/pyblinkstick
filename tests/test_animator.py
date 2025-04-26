@@ -1,11 +1,11 @@
 import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
 from blinkstick import BlinkStick
-from src.blinkstick.animation.animator import Animator
-from src.blinkstick.animation.base import Animation
+from blinkstick.animation.animator import Animator
+from blinkstick.animation.base import Animation
 
 
 @pytest.fixture
@@ -185,14 +185,22 @@ def test_start_behavior_based_on_initial_state(animator, initially_running):
             animator.start()
             # Wait briefly for the thread to actually start
             time.sleep(0.05)
-            assert animator._running is True, "Animator should be running after initial start"
-            assert animator._animation_thread is not None, "Thread should exist after initial start"
-            assert animator._animation_thread.is_alive(), "Thread should be alive after initial start"
+            assert (
+                animator._running is True
+            ), "Animator should be running after initial start"
+            assert (
+                animator._animation_thread is not None
+            ), "Thread should exist after initial start"
+            assert (
+                animator._animation_thread.is_alive()
+            ), "Thread should be alive after initial start"
             initial_thread = animator._animation_thread
         else:
             # Ensure the animator starts in a non-running state
             assert animator._running is False, "Animator should initially be stopped"
-            assert animator._animation_thread is None, "Animator thread should initially be None"
+            assert (
+                animator._animation_thread is None
+            ), "Animator thread should initially be None"
 
         # --- Action phase: Call start() again (the actual operation under test) ---
         animator.start()
@@ -201,14 +209,22 @@ def test_start_behavior_based_on_initial_state(animator, initially_running):
             time.sleep(0.05)
 
         # --- Assertion phase ---
-        assert animator._running is True, "Animator should be running after the tested start() call"
+        assert (
+            animator._running is True
+        ), "Animator should be running after the tested start() call"
         current_thread = animator._animation_thread
-        assert current_thread is not None, "Animator thread should exist after the tested start() call"
-        assert current_thread.is_alive(), "Animator thread should be alive after the tested start() call"
+        assert (
+            current_thread is not None
+        ), "Animator thread should exist after the tested start() call"
+        assert (
+            current_thread.is_alive()
+        ), "Animator thread should be alive after the tested start() call"
 
         if initially_running:
             # If it was already running, the thread instance should NOT have changed.
-            assert current_thread is initial_thread, "Thread instance should not change if already running"
+            assert (
+                current_thread is initial_thread
+            ), "Thread instance should not change if already running"
         # No specific 'else' assertion needed here for the thread instance,
         # as we just need to ensure *a* thread exists and is alive.
 
@@ -217,9 +233,13 @@ def test_start_behavior_based_on_initial_state(animator, initially_running):
         if animator._running:
             animator.stop()
             # Wait for the thread to terminate if stop() isn't fully blocking
-            thread_to_join = initial_thread if initially_running else animator._animation_thread
+            thread_to_join = (
+                initial_thread if initially_running else animator._animation_thread
+            )
             if thread_to_join and thread_to_join.is_alive():
                 # Use the captured thread object for joining
                 thread_to_join.join(timeout=1.0)
             # Check animator state after stop
-            assert animator._running is False, "Animator should be stopped after cleanup"
+            assert (
+                animator._running is False
+            ), "Animator should be stopped after cleanup"
